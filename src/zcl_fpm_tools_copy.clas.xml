@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_FPM_TOOLS_COPY</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>copy FPM</DESCRIPT>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_FPM_TOOLS_COPY</CLSNAME>
+     <CMPNAME>GET_LCS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>최장 공통 문자열(Longest Common Substring)</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_FPM_TOOLS_COPY</CLSNAME>
+     <CMPNAME>MT_CONFIG_KEY</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Table of Configuration Keys</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_FPM_TOOLS_COPY</CLSNAME>
+     <CMPNAME>STEP1</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>STEP1: replace rule</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_FPM_TOOLS_COPY</CLSNAME>
+     <CMPNAME>STEP2</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>STEP2: name mapping</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_FPM_TOOLS_COPY</CLSNAME>
+     <CMPNAME>STEP3</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>STEP3: create object</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>
