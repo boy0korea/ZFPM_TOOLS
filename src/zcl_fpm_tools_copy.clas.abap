@@ -1,19 +1,19 @@
-class ZCL_FPM_TOOLS_COPY definition
-  public
-  create public .
+CLASS zcl_fpm_tools_copy DEFINITION
+  PUBLIC
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  types:
-    BEGIN OF ts_replace_rule,
+    TYPES:
+      BEGIN OF ts_replace_rule,
         ns_to    TYPE string,
         beg_from TYPE string,
         beg_to   TYPE string,
         end_from TYPE string,
         end_to   TYPE string,
       END OF ts_replace_rule .
-  types:
-    BEGIN OF ts_fpm_name_map,
+    TYPES:
+      BEGIN OF ts_fpm_name_map,
         application                  TYPE wdy_config_appl-application,
         config_id                    TYPE wdy_config_appl-config_id,
         application_copy             TYPE wdy_config_appl-application,
@@ -21,8 +21,8 @@ public section.
         application_description_copy TYPE wdy_md_description,
         config_description_copy      TYPE wdy_md_description,
       END OF ts_fpm_name_map .
-  types:
-    BEGIN OF ts_uibb_name_map,
+    TYPES:
+      BEGIN OF ts_uibb_name_map,
         config_id                     TYPE wdy_config_id,
         feeder_class                  TYPE fpmgb_feeder_class,
         config_id_copy                TYPE wdy_config_id,
@@ -31,65 +31,65 @@ public section.
         feeder_class_copy             TYPE fpmgb_feeder_class,
         feeder_class_description_copy TYPE wdy_md_description,
       END OF ts_uibb_name_map .
-  types:
-    tt_uibb_name_map TYPE TABLE OF ts_uibb_name_map .
+    TYPES:
+      tt_uibb_name_map TYPE TABLE OF ts_uibb_name_map .
 
-  class-methods EXECUTE
-    importing
-      !IV_FROM type WDY_CONFIG_ID
-      !IV_TO type WDY_CONFIG_ID
-      !IV_DEVCLASS type DEVCLASS optional
-      !IV_TRKORR type TRKORR optional .
-  class-methods GET_LCS
-    importing
-      !IV_X type CLIKE
-      !IV_Y type CLIKE
-    exporting
-      !EV_LENGTH type I
-      !EV_X_OFFSET type I
-      !EV_Y_OFFSET type I .
-  class-methods STEP1
-    importing
-      !IV_FROM type WDY_CONFIG_ID
-      !IV_TO type WDY_CONFIG_ID
-    exporting
-      !ES_FPM_NAME_MAP type TS_FPM_NAME_MAP
-      !ES_REPLACE_RULE type TS_REPLACE_RULE .
-  class-methods STEP2
-    importing
-      !IV_FROM type WDY_CONFIG_ID
-      !IS_REPLACE_RULE type TS_REPLACE_RULE
-      !IV_FEEDER_CLASS_COPY_MODE type CHAR1 default 'C'
-    exporting
-      !ET_UIBB_NAME_MAP type TT_UIBB_NAME_MAP .
-  class-methods STEP3
-    importing
-      !IS_FPM_NAME_MAP type TS_FPM_NAME_MAP
-      !IT_UIBB_NAME_MAP type TT_UIBB_NAME_MAP
-      !IV_DEVCLASS type DEVCLASS optional
-      !IV_TRKORR type TRKORR optional .
-  class-methods COPY_WDYA
-    importing
-      !IV_FROM type WDY_APPLICATION_NAME
-      !IV_TO type WDY_APPLICATION_NAME
-      !IV_DEVCLASS type DEVCLASS
-      !IV_TRKORR type TRKORR .
+    CLASS-METHODS execute
+      IMPORTING
+        !iv_from     TYPE wdy_config_id
+        !iv_to       TYPE wdy_config_id
+        !iv_devclass TYPE devclass OPTIONAL
+        !iv_trkorr   TYPE trkorr OPTIONAL .
+    CLASS-METHODS get_lcs
+      IMPORTING
+        !iv_x        TYPE clike
+        !iv_y        TYPE clike
+      EXPORTING
+        !ev_length   TYPE i
+        !ev_x_offset TYPE i
+        !ev_y_offset TYPE i .
+    CLASS-METHODS step1
+      IMPORTING
+        !iv_from         TYPE wdy_config_id
+        !iv_to           TYPE wdy_config_id
+      EXPORTING
+        !es_fpm_name_map TYPE ts_fpm_name_map
+        !es_replace_rule TYPE ts_replace_rule .
+    CLASS-METHODS step2
+      IMPORTING
+        !iv_from                   TYPE wdy_config_id
+        !is_replace_rule           TYPE ts_replace_rule
+        !iv_feeder_class_copy_mode TYPE char1 DEFAULT 'C'
+      EXPORTING
+        !et_uibb_name_map          TYPE tt_uibb_name_map .
+    CLASS-METHODS step3
+      IMPORTING
+        !is_fpm_name_map  TYPE ts_fpm_name_map
+        !it_uibb_name_map TYPE tt_uibb_name_map
+        !iv_devclass      TYPE devclass OPTIONAL
+        !iv_trkorr        TYPE trkorr OPTIONAL .
+    CLASS-METHODS copy_wdya
+      IMPORTING
+        !iv_from     TYPE wdy_application_name
+        !iv_to       TYPE wdy_application_name
+        !iv_devclass TYPE devclass
+        !iv_trkorr   TYPE trkorr .
   PROTECTED SECTION.
-private section.
+  PRIVATE SECTION.
 
-  class-data MO_CONFIG_HRCHY type ref to CL_FPM_CFG_HRCHY_BRWSR_ASSIST .
-  class-data MT_CONFIG_KEY type WDY_CONFIG_KEYS .
+    CLASS-DATA mo_config_hrchy TYPE REF TO cl_fpm_cfg_hrchy_brwsr_assist .
+    CLASS-DATA mt_config_key TYPE wdy_config_keys .
 
-  class-methods REPLACE
-    importing
-      !IS_REPLACE_RULE type TS_REPLACE_RULE
-    changing
-      !CV_VALUE type CLIKE .
-  class-methods ON_CONFIG_TOOL_FINISHED
-    for event ACTION_FINISHED of IF_WD_CONFIG_TOOL_BASE
-    importing
-      !CALLER .
-  class-methods DEQUEUE_ALL .
+    CLASS-METHODS replace
+      IMPORTING
+        !is_replace_rule TYPE ts_replace_rule
+      CHANGING
+        !cv_value        TYPE clike .
+    CLASS-METHODS on_config_tool_finished
+      FOR EVENT action_finished OF if_wd_config_tool_base
+      IMPORTING
+        !caller .
+    CLASS-METHODS dequeue_all .
 ENDCLASS.
 
 
@@ -587,7 +587,8 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
       ENDIF.
       CHECK: ls_uibb_name_map-config_id_copy IS NOT INITIAL.
 
-      IF ls_uibb_name_map-feeder_class EQ ls_uibb_name_map-feeder_class_copy.
+      IF ls_uibb_name_map-feeder_class IS INITIAL OR
+         ls_uibb_name_map-feeder_class EQ ls_uibb_name_map-feeder_class_copy.
         CLEAR: ls_uibb_name_map-feeder_class_copy, ls_uibb_name_map-feeder_class_copy_mode.
       ENDIF.
 
@@ -632,16 +633,9 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
     DELETE ADJACENT DUPLICATES FROM lt_uibb_name_map_feeder COMPARING feeder_class_copy.
 
     LOOP AT lt_uibb_name_map_feeder INTO ls_uibb_name_map.
-      ls_class_key-clsname = ls_uibb_name_map-feeder_class.
-      ls_class_copy_key-clsname = ls_uibb_name_map-feeder_class_copy.
 
       IF ls_uibb_name_map-feeder_class_copy_mode EQ 'I'.
-        CALL FUNCTION 'SEO_CLASS_READ'
-          EXPORTING
-            clskey = ls_class_key
-          IMPORTING
-            class  = ls_class.
-        IF ls_class-clsfinal EQ abap_true.
+        IF zcl_fpm_tools=>can_inherit( ls_uibb_name_map-feeder_class ) EQ abap_false.
           ls_uibb_name_map-feeder_class_copy_mode = 'C'.
         ELSE.
           CLEAR: ls_class, ls_inheritance.
@@ -675,6 +669,8 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
       ENDIF.
 
       IF ls_uibb_name_map-feeder_class_copy_mode EQ 'C'.
+        ls_class_key-clsname = ls_uibb_name_map-feeder_class.
+        ls_class_copy_key-clsname = ls_uibb_name_map-feeder_class_copy.
         CALL FUNCTION 'SEO_CLASS_COPY'
           EXPORTING
             clskey       = ls_class_key

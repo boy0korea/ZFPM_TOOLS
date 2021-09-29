@@ -1,8 +1,5 @@
-*&---------------------------------------------------------------------*
-*& Report ZFPM_TOOLS
-*&---------------------------------------------------------------------*
-*&
-*&---------------------------------------------------------------------*
+* ZFPM_TOOLS
+
 REPORT zfpm_tools.
 
 **********************************************************************
@@ -425,17 +422,11 @@ FORM do_inherit_fc USING iv_index.
         ls_objects     TYPE dwinactiv.
 
   ls_old_class-clsname = gt_uibb_info[ iv_index ]-feeder_class.
-
-  CALL FUNCTION 'SEO_CLASS_READ'
+  zcl_fpm_tools=>can_inherit(
     EXPORTING
-      clskey = ls_old_class
-    IMPORTING
-      class  = ls_class.
-  IF ls_class-clsfinal EQ abap_true.
-    MESSAGE e109(oo) WITH ls_old_class-clsname.
-* Class & is final - it cannot have subclasses
-    RETURN.
-  ENDIF.
+      iv_class       = ls_old_class-clsname
+      iv_message     = abap_true
+  ).
 
   CALL FUNCTION 'SEO_CLIF_COPY_INPUT_DYNPRO'
     EXPORTING
@@ -629,10 +620,19 @@ FORM do_save_edit.
 ENDFORM.
 
 FORM execute_copy.
+  TYPES: BEGIN OF ts_outtab.
+           INCLUDE TYPE zcl_fpm_tools_copy=>ts_uibb_name_map.
+  TYPES:   mode_copy    TYPE c,
+           mode_inherit TYPE c,
+           style        TYPE lvc_t_styl,
+         END OF ts_outtab.
   DATA: ls_fpm_name_map  TYPE zcl_fpm_tools_copy=>ts_fpm_name_map,
         ls_replace_rule  TYPE zcl_fpm_tools_copy=>ts_replace_rule,
         ls_uibb_name_map TYPE zcl_fpm_tools_copy=>ts_uibb_name_map,
         lt_uibb_name_map TYPE zcl_fpm_tools_copy=>tt_uibb_name_map,
+        ls_outtab        TYPE ts_outtab,
+        lt_outtab        TYPE TABLE OF ts_outtab,
+        ls_style         TYPE lvc_s_styl,
         lt_fieldcat_lvc  TYPE lvc_t_fcat,
         ls_layout_lvc    TYPE lvc_s_layo,
         ls_exit_by_user  TYPE slis_exit_by_user.
@@ -656,16 +656,52 @@ FORM execute_copy.
       et_uibb_name_map = lt_uibb_name_map
   ).
 
-  ls_uibb_name_map-config_id = ls_fpm_name_map-config_id.
-  ls_uibb_name_map-config_id_copy = ls_fpm_name_map-config_id_copy.
-  ls_uibb_name_map-config_description_copy = ls_fpm_name_map-config_description_copy.
-  ls_uibb_name_map-feeder_class = ls_fpm_name_map-application.
-  ls_uibb_name_map-feeder_class_copy = ls_fpm_name_map-application_copy.
-  ls_uibb_name_map-feeder_class_description_copy = ls_fpm_name_map-application_description_copy.
-  INSERT ls_uibb_name_map INTO lt_uibb_name_map INDEX 1.
+
+  MOVE-CORRESPONDING lt_uibb_name_map TO lt_outtab.
+  LOOP AT lt_outtab INTO ls_outtab.
+    CASE ls_outtab-feeder_class_copy_mode.
+      WHEN 'C'.
+        ls_outtab-mode_copy = abap_true.
+        MODIFY lt_outtab FROM ls_outtab TRANSPORTING mode_copy.
+      WHEN 'I'.
+        ls_outtab-mode_inherit = abap_true.
+        MODIFY lt_outtab FROM ls_outtab TRANSPORTING mode_inherit.
+      WHEN OTHERS.
+        IF ls_outtab-feeder_class IS INITIAL.
+          ls_style-fieldname = 'MODE_COPY'.
+          ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
+          INSERT ls_style INTO TABLE ls_outtab-style.
+          ls_style-fieldname = 'MODE_INHERIT'.
+          ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
+          INSERT ls_style INTO TABLE ls_outtab-style.
+        ENDIF.
+        ls_style-fieldname = 'FEEDER_CLASS_COPY'.
+        ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
+        INSERT ls_style INTO TABLE ls_outtab-style.
+        ls_style-fieldname = 'FEEDER_CLASS_DESCRIPTION_COPY'.
+        ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
+        INSERT ls_style INTO TABLE ls_outtab-style.
+        MODIFY lt_outtab FROM ls_outtab TRANSPORTING style.
+    ENDCASE.
+  ENDLOOP.
+  ls_style-fieldname = 'MODE_INHERIT'.
+  ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
+
+  ls_outtab-config_id = ls_fpm_name_map-config_id.
+  ls_outtab-config_id_copy = ls_fpm_name_map-config_id_copy.
+  ls_outtab-config_description_copy = ls_fpm_name_map-config_description_copy.
+  ls_outtab-feeder_class = ls_fpm_name_map-application.
+  ls_outtab-feeder_class_copy = ls_fpm_name_map-application_copy.
+  ls_outtab-feeder_class_copy_mode = 'C'.
+  ls_outtab-feeder_class_description_copy = ls_fpm_name_map-application_description_copy.
+  ls_outtab-mode_copy = abap_true.
+  ls_outtab-style = VALUE #( ( fieldname = 'MODE_INHERIT' style = cl_gui_alv_grid=>mc_style_disabled ) ).
+  INSERT ls_outtab INTO lt_outtab INDEX 1.
 
   ls_layout_lvc-zebra = abap_true.
   ls_layout_lvc-no_rowmark = abap_true.
+*  ls_layout_lvc-edit = abap_true.
+  ls_layout_lvc-stylefname = 'STYLE'.
 *    TYPES:
 *      BEGIN OF ts_uibb_name_map,
 *        config_id                     TYPE wdy_config_id,
@@ -681,7 +717,9 @@ FORM execute_copy.
     ( fieldname = 'CONFIG_ID_COPY' reptext = 'copy to' outputlen = 32 edit = abap_true )
     ( fieldname = 'CONFIG_DESCRIPTION_COPY' rollname = 'WDY_MD_DESCRIPTION' outputlen = 60 lowercase = abap_true edit = abap_true )
     ( fieldname = 'FEEDER_CLASS' rollname = 'FPMGB_FEEDER_CLASS' outputlen = 30 )
-    ( fieldname = 'FEEDER_CLASS_COPY_MODE' reptext = 'copy mode' drdn_hndl = 1 drdn_alias = abap_true edit = abap_true )
+*    ( fieldname = 'FEEDER_CLASS_COPY_MODE' reptext = 'copy mode' drdn_hndl = 1 edit = abap_true )
+    ( fieldname = 'MODE_COPY' reptext = 'copy' checkbox = abap_true edit = abap_true )
+    ( fieldname = 'MODE_INHERIT' reptext = 'inherit' checkbox = abap_true edit = abap_true )
     ( fieldname = 'FEEDER_CLASS_COPY' reptext = 'copy to' outputlen = 30 edit = abap_true )
     ( fieldname = 'FEEDER_CLASS_DESCRIPTION_COPY' rollname = 'WDY_MD_DESCRIPTION' outputlen = 60 lowercase = abap_true edit = abap_true )
   ).
@@ -700,7 +738,7 @@ FORM execute_copy.
 *     i_structure_name         = i_structure_name           " Internal Output Table Structure Name
 *     i_background_id          = i_background_id            " Object ID of wallpaper
 *     i_grid_title             = i_grid_title               " Control title
-*     i_grid_settings          = i_grid_settings            " Grid settings
+*     i_grid_settings          = VALUE lvc_s_glay(  )            " Grid settings
       is_layout_lvc            = ls_layout_lvc              " List Layout Specifications
       it_fieldcat_lvc          = lt_fieldcat_lvc            " Field Catalog with Field Descriptions
       it_excluding             = VALUE slis_t_extab( ( fcode = '&OUP' ) ( fcode = '&ODN' ) )               " Table of inactive function codes
@@ -712,7 +750,7 @@ FORM execute_copy.
 *     i_default                = 'X'                        " Initial variant active/inactive logic
 *     i_save                   = space                      " Variants Can be Saved
 *     is_variant               = is_variant                 " Variant information
-*     it_events                = it_events                  " Table of events to perform
+      it_events                = VALUE slis_t_event( ( name = 'DATA_CHANGED' form = 'COPY_DATA_CHANGED' ) )                  " Table of events to perform
 *     it_event_exit            = it_event_exit              " Standard fcode exit requests table
 *     is_print_lvc             = is_print_lvc               " Print information
 *     is_reprep_id_lvc         = is_reprep_id_lvc           " Initialization key for Re/Re interface
@@ -729,7 +767,7 @@ FORM execute_copy.
 *     e_exit_caused_by_caller  = e_exit_caused_by_caller    " Delete list in CALLBACK_USER_COMMAND
       es_exit_caused_by_user   = ls_exit_by_user     " How the user left the list
     TABLES
-      t_outtab                 = lt_uibb_name_map                   " Table with data to be displayed
+      t_outtab                 = lt_outtab                   " Table with data to be displayed
     EXCEPTIONS
       program_error            = 1                          " Program Errors
       OTHERS                   = 2.
@@ -740,11 +778,31 @@ FORM execute_copy.
 
   CHECK: ls_exit_by_user IS INITIAL.
 
-
-  READ TABLE lt_uibb_name_map INTO ls_uibb_name_map INDEX 1.
-  DELETE lt_uibb_name_map INDEX 1.
-  ls_fpm_name_map-config_id_copy = ls_uibb_name_map-config_id_copy.
-  ls_fpm_name_map-application_copy = ls_uibb_name_map-feeder_class_copy.
+  READ TABLE lt_outtab INTO ls_outtab INDEX 1.
+  DELETE lt_outtab INDEX 1.
+  ls_fpm_name_map-config_id_copy = ls_outtab-config_id_copy.
+  IF ls_outtab-mode_copy EQ abap_true.
+    ls_fpm_name_map-application_copy = ls_outtab-feeder_class_copy.
+    ls_fpm_name_map-application_description_copy = ls_outtab-feeder_class_description_copy.
+  ELSE.
+    CLEAR: ls_fpm_name_map-application_copy, ls_fpm_name_map-application_description_copy.
+  ENDIF.
+*  MOVE-CORRESPONDING lt_outtab TO lt_uibb_name_map.
+  CLEAR: lt_uibb_name_map.
+  LOOP AT lt_outtab INTO ls_outtab.
+    IF ls_outtab-mode_copy EQ abap_true.
+      ls_outtab-feeder_class_copy_mode = 'C'.
+    ELSEIF ls_outtab-mode_inherit EQ abap_true.
+      ls_outtab-feeder_class_copy_mode = 'I'.
+    ELSE.
+      CLEAR: ls_outtab-feeder_class_copy_mode.
+    ENDIF.
+    IF ls_outtab-feeder_class_copy IS INITIAL.
+      CLEAR: ls_outtab-feeder_class_copy_mode.
+    ENDIF.
+    MOVE-CORRESPONDING ls_outtab TO ls_uibb_name_map.
+    APPEND ls_uibb_name_map TO lt_uibb_name_map.
+  ENDLOOP.
 
   zcl_fpm_tools_copy=>step3(
     EXPORTING
@@ -753,9 +811,9 @@ FORM execute_copy.
   ).
 ENDFORM.
 FORM copy_pf_status_set USING ps_extab TYPE slis_t_extab.
-  DATA: lo_grid            TYPE REF TO cl_gui_alv_grid,
-        lt_drop_down_alias TYPE lvc_t_dral,
-        ls_drop_down_alias TYPE lvc_s_dral.
+  DATA: lo_grid      TYPE REF TO cl_gui_alv_grid,
+        lt_drop_down TYPE lvc_t_drop,
+        ls_drop_down TYPE lvc_s_drop.
 
   SET PF-STATUS 'COPY' EXCLUDING ps_extab.
 
@@ -764,26 +822,104 @@ FORM copy_pf_status_set USING ps_extab TYPE slis_t_extab.
     CALL FUNCTION 'GET_GLOBALS_FROM_SLVC_FULLSCR'
       IMPORTING
         e_grid = lo_grid.
+    lo_grid->register_edit_event( cl_gui_alv_grid=>mc_evt_modified ).
 
-    ls_drop_down_alias-handle = 1.
-
-    ls_drop_down_alias-value = ' '.
-    ls_drop_down_alias-int_value = ' '.
-    APPEND ls_drop_down_alias TO lt_drop_down_alias.
-    ls_drop_down_alias-value = 'Copy'.
-    ls_drop_down_alias-int_value = 'C'.
-    APPEND ls_drop_down_alias TO lt_drop_down_alias.
-    ls_drop_down_alias-value = 'Inherit'.
-    ls_drop_down_alias-int_value = 'I'.
-    APPEND ls_drop_down_alias TO lt_drop_down_alias.
-
-    lo_grid->set_drop_down_table(
-      EXPORTING
-        it_drop_down_alias = lt_drop_down_alias
-    ).
-    lo_grid->refresh_table_display( ).
+*    ls_drop_down-handle = 1.
+*
+*    ls_drop_down-value = ' '.
+*    APPEND ls_drop_down TO lt_drop_down.
+*    ls_drop_down-value = 'C'.
+*    APPEND ls_drop_down TO lt_drop_down.
+*    ls_drop_down-value = 'I'.
+*    APPEND ls_drop_down TO lt_drop_down.
+*
+*    lo_grid->set_drop_down_table(
+*      EXPORTING
+*        it_drop_down = lt_drop_down
+*    ).
+*    lo_grid->refresh_table_display( ).
   ENDIF.
 ENDFORM.
+FORM copy_data_changed USING pi_data_changed TYPE REF TO cl_alv_changed_data_protocol.
+  DATA : ls_mod_cells TYPE lvc_s_modi,
+         lv_value     TYPE lvc_value.
+
+  LOOP AT pi_data_changed->mt_good_cells INTO ls_mod_cells WHERE fieldname = 'MODE_COPY' OR fieldname = 'MODE_INHERIT'.
+    IF ls_mod_cells-value IS NOT INITIAL.
+      IF ls_mod_cells-fieldname EQ 'MODE_COPY'.
+        pi_data_changed->modify_cell(
+          EXPORTING
+            i_row_id    = ls_mod_cells-row_id
+            i_fieldname = 'MODE_INHERIT'
+            i_value     = space
+        ).
+      ELSE.
+        pi_data_changed->modify_cell(
+          EXPORTING
+            i_row_id    = ls_mod_cells-row_id
+            i_fieldname = 'MODE_COPY'
+            i_value     = space
+        ).
+      ENDIF.
+      pi_data_changed->modify_style(
+        EXPORTING
+          i_row_id    = ls_mod_cells-row_id
+          i_fieldname = 'FEEDER_CLASS_COPY'
+          i_style     = cl_gui_alv_grid=>mc_style_enabled
+      ).
+      pi_data_changed->modify_style(
+        EXPORTING
+          i_row_id    = ls_mod_cells-row_id
+          i_fieldname = 'FEEDER_CLASS_DESCRIPTION_COPY'
+          i_style     = cl_gui_alv_grid=>mc_style_enabled
+      ).
+    ELSE.
+      IF ls_mod_cells-fieldname EQ 'MODE_COPY'.
+        pi_data_changed->get_cell_value(
+          EXPORTING
+            i_row_id    = ls_mod_cells-row_id
+            i_fieldname = 'MODE_INHERIT'
+          IMPORTING
+            e_value     = lv_value
+        ).
+      ELSE.
+        pi_data_changed->get_cell_value(
+          EXPORTING
+            i_row_id    = ls_mod_cells-row_id
+            i_fieldname = 'MODE_COPY'
+          IMPORTING
+            e_value     = lv_value
+        ).
+      ENDIF.
+      IF lv_value IS INITIAL.
+        pi_data_changed->modify_cell(
+          EXPORTING
+            i_row_id    = ls_mod_cells-row_id
+            i_fieldname = 'FEEDER_CLASS_COPY'
+            i_value     = space
+        ).
+        pi_data_changed->modify_cell(
+          EXPORTING
+            i_row_id    = ls_mod_cells-row_id
+            i_fieldname = 'FEEDER_CLASS_DESCRIPTION_COPY'
+            i_value     = space
+        ).
+        pi_data_changed->modify_style(
+          EXPORTING
+            i_row_id    = ls_mod_cells-row_id
+            i_fieldname = 'FEEDER_CLASS_COPY'
+            i_style     = cl_gui_alv_grid=>mc_style_disabled
+        ).
+        pi_data_changed->modify_style(
+          EXPORTING
+            i_row_id    = ls_mod_cells-row_id
+            i_fieldname = 'FEEDER_CLASS_DESCRIPTION_COPY'
+            i_style     = cl_gui_alv_grid=>mc_style_disabled
+        ).
+      ENDIF.
+    ENDIF.
+  ENDLOOP.
+ENDFORM.                    "ALV_DATA_CHANGED
 FORM copy_user_command USING pv_ucomm ps_select TYPE slis_selfield.
   CASE pv_ucomm.
     WHEN 'EXEC'.

@@ -62,6 +62,12 @@ CLASS zcl_fpm_tools DEFINITION
       IMPORTING
         !iv_name     TYPE clike
         !iv_typekind TYPE ddtypekind .
+    CLASS-METHODS can_inherit
+      IMPORTING
+        !iv_class             TYPE seoclsname
+        !iv_message           TYPE flag OPTIONAL
+      RETURNING
+        VALUE(rv_can_inherit) TYPE flag .
     CLASS-METHODS delete_fpm_tree
       IMPORTING
         !iv_wdca              TYPE wdy_config_id
@@ -74,24 +80,24 @@ CLASS zcl_fpm_tools DEFINITION
     CLASS-METHODS import_fpm_tree
       IMPORTING
         !iv_zip TYPE xstring .
-protected section.
+  PROTECTED SECTION.
 
-  class-methods ADD_JSON_TO_ZIP
-    importing
-      !IT_DATA type DATA
-      !IV_TABLE type CLIKE
-      !IO_ZIP type ref to CL_ABAP_ZIP .
-  class-methods GET_WDCC_XML_FILENAME
-    importing
-      !IV_WDCC type WDY_CONFIG_ID
-    returning
-      value(RV_FILENAME) type STRING .
-  class-methods GET_WDCA_XML_FILENAME
-    importing
-      !IV_WDCA type WDY_CONFIG_ID
-    returning
-      value(RV_FILENAME) type STRING .
-private section.
+    CLASS-METHODS add_json_to_zip
+      IMPORTING
+        !it_data  TYPE data
+        !iv_table TYPE clike
+        !io_zip   TYPE REF TO cl_abap_zip .
+    CLASS-METHODS get_wdcc_xml_filename
+      IMPORTING
+        !iv_wdcc           TYPE wdy_config_id
+      RETURNING
+        VALUE(rv_filename) TYPE string .
+    CLASS-METHODS get_wdca_xml_filename
+      IMPORTING
+        !iv_wdca           TYPE wdy_config_id
+      RETURNING
+        VALUE(rv_filename) TYPE string .
+  PRIVATE SECTION.
 ENDCLASS.
 
 
@@ -152,7 +158,7 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
       EXPORTING
         object              = <lv_object>         " Object name
         object_class        = iv_typekind
-*        mode                = 'I'          " I(nsert), if object new
+*       mode                = 'I'          " I(nsert), if object new
         global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
       EXCEPTIONS
         cancelled           = 1              " Processing cancelled
@@ -257,22 +263,6 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
       WHERE application = lv_application.
     IF sy-subrc <> 0.
       " if it has no config.
-      CALL FUNCTION 'RS_CORR_INSERT'
-        EXPORTING
-          object              = lv_application         " Object name
-          object_class        = 'WDYA'   " Object class (ABAP,SCUA,SCRP,DICT,FUNC.)
-        IMPORTING
-          korrnum             = lv_corrnr        " Correction number
-        EXCEPTIONS
-          cancelled           = 1              " Processing cancelled
-          permission_failure  = 2              " No correction entry possible
-          unknown_objectclass = 3              " Object class not recognised
-          OTHERS              = 4.
-      IF sy-subrc <> 0.
-        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-      ENDIF.
-
       TRY.
           cl_wdy_wb_application_util=>delete_application(
             EXPORTING
@@ -1306,5 +1296,66 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
       ENDCASE.
     ENDDO.
 
+  ENDMETHOD.
+
+
+  METHOD can_inherit.
+    DATA:
+      superclskey TYPE seoclskey,
+      superclass  TYPE vseoclass.
+
+    superclskey-clsname = iv_class.
+
+* check superclass existence
+    CALL FUNCTION 'SEO_CLASS_GET'
+      EXPORTING
+        clskey       = superclskey
+        version      = seoc_version_inactive
+        state        = '0'
+      IMPORTING
+*       SUPERCLASS   =
+        class        = superclass
+      EXCEPTIONS
+        not_existing = 1
+        deleted      = 2
+        is_interface = 3
+        model_only   = 4
+        OTHERS       = 5.
+    IF sy-subrc <> 0.
+      IF iv_message EQ abap_true.
+        MESSAGE ID sy-msgid TYPE 'E' NUMBER sy-msgno
+          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+      RETURN.
+    ENDIF.
+
+* check superclass is final
+    IF superclass-clsfinal = seox_true.
+      IF iv_message EQ abap_true.
+        MESSAGE e109(oo)
+          WITH superclskey-clsname.
+      ENDIF.
+      RETURN.
+    ENDIF.
+
+    CASE superclass-category.
+      WHEN seoc_category_persistent.
+        IF iv_message EQ abap_true.
+          MESSAGE e626(oo).
+        ENDIF.
+        RETURN.
+      WHEN seoc_category_p_agent.
+        IF iv_message EQ abap_true.
+          MESSAGE e630(oo) WITH superclass-clsname.
+        ENDIF.
+        RETURN.
+      WHEN seoc_category_exception.
+        IF iv_message EQ abap_true.
+          MESSAGE e192(oo).
+        ENDIF.
+        RETURN.
+    ENDCASE.
+
+    rv_can_inherit = abap_true.
   ENDMETHOD.
 ENDCLASS.
