@@ -636,6 +636,7 @@ FORM execute_copy.
         lt_fieldcat_lvc  TYPE lvc_t_fcat,
         ls_layout_lvc    TYPE lvc_s_layo,
         ls_exit_by_user  TYPE slis_exit_by_user.
+  FIELD-SYMBOLS: <ls_outtab> TYPE ts_outtab.
 
   zcl_fpm_tools_copy=>step1(
     EXPORTING
@@ -658,35 +659,38 @@ FORM execute_copy.
 
 
   MOVE-CORRESPONDING lt_uibb_name_map TO lt_outtab.
-  LOOP AT lt_outtab INTO ls_outtab.
-    CASE ls_outtab-feeder_class_copy_mode.
+  LOOP AT lt_outtab ASSIGNING <ls_outtab>.
+    IF <ls_outtab>-feeder_class IS INITIAL.
+      ls_style-fieldname = 'MODE_COPY'.
+      ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
+      INSERT ls_style INTO TABLE <ls_outtab>-style.
+      ls_style-fieldname = 'MODE_INHERIT'.
+      ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
+      INSERT ls_style INTO TABLE <ls_outtab>-style.
+    ELSEIF zcl_fpm_tools=>can_inherit( <ls_outtab>-feeder_class ) EQ abap_false.
+      ls_style-fieldname = 'MODE_INHERIT'.
+      ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
+      INSERT ls_style INTO TABLE <ls_outtab>-style.
+      IF <ls_outtab>-feeder_class_copy_mode EQ 'I'.
+        <ls_outtab>-feeder_class_copy_mode = 'C'.
+      ENDIF.
+    ENDIF.
+    CASE <ls_outtab>-feeder_class_copy_mode.
       WHEN 'C'.
-        ls_outtab-mode_copy = abap_true.
-        MODIFY lt_outtab FROM ls_outtab TRANSPORTING mode_copy.
+        <ls_outtab>-mode_copy = abap_true.
       WHEN 'I'.
-        ls_outtab-mode_inherit = abap_true.
-        MODIFY lt_outtab FROM ls_outtab TRANSPORTING mode_inherit.
+        <ls_outtab>-mode_inherit = abap_true.
       WHEN OTHERS.
-        IF ls_outtab-feeder_class IS INITIAL.
-          ls_style-fieldname = 'MODE_COPY'.
-          ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
-          INSERT ls_style INTO TABLE ls_outtab-style.
-          ls_style-fieldname = 'MODE_INHERIT'.
-          ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
-          INSERT ls_style INTO TABLE ls_outtab-style.
-        ENDIF.
         ls_style-fieldname = 'FEEDER_CLASS_COPY'.
         ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
-        INSERT ls_style INTO TABLE ls_outtab-style.
+        INSERT ls_style INTO TABLE <ls_outtab>-style.
         ls_style-fieldname = 'FEEDER_CLASS_DESCRIPTION_COPY'.
         ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
-        INSERT ls_style INTO TABLE ls_outtab-style.
-        MODIFY lt_outtab FROM ls_outtab TRANSPORTING style.
+        INSERT ls_style INTO TABLE <ls_outtab>-style.
     ENDCASE.
   ENDLOOP.
-  ls_style-fieldname = 'MODE_INHERIT'.
-  ls_style-style = cl_gui_alv_grid=>mc_style_disabled.
 
+  CLEAR: ls_outtab.
   ls_outtab-config_id = ls_fpm_name_map-config_id.
   ls_outtab-config_id_copy = ls_fpm_name_map-config_id_copy.
   ls_outtab-config_description_copy = ls_fpm_name_map-config_description_copy.
