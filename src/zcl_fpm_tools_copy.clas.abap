@@ -209,7 +209,9 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
           lv_length_x TYPE i,
           lv_length_y TYPE i,
           lv_index_x  TYPE i,
-          lv_index_y  TYPE i.
+          lv_index_y  TYPE i,
+          lv_offset_x TYPE i,
+          lv_offset_y TYPE i.
     FIELD-SYMBOLS: <lcs_line>  TYPE int4_table,
                    <lcs_value> TYPE i.
 
@@ -228,23 +230,24 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
 *else:
 *	LCS[i][j] = 0
 
-    lv_length_x = strlen( iv_x ).
-    lv_length_y = strlen( iv_y ).
+    lv_length_x = strlen( iv_x ) + 1.
+    lv_length_y = strlen( iv_y ) + 1.
 
     DO lv_length_y TIMES.
-      lv_index_y = sy-index - 1.
+      lv_index_y = sy-index.
+      lv_offset_y = sy-index - 2.
       APPEND INITIAL LINE TO lcs ASSIGNING <lcs_line>.
       DO lv_length_x TIMES.
-        lv_index_x = sy-index - 1.
+        lv_index_x = sy-index.
+        lv_offset_x = sy-index - 2.
         APPEND 0 TO <lcs_line> ASSIGNING <lcs_value>.
-        IF lv_index_x EQ 0 OR lv_index_y EQ 0.
-          " 0
-        ELSEIF iv_x+lv_index_x(1) EQ iv_y+lv_index_y(1).
-          <lcs_value> = lcs[ lv_index_y ][ lv_index_x ] + 1.
+        IF lv_index_x EQ 1 OR lv_index_y EQ 1.
+        ELSEIF iv_x+lv_offset_x(1) EQ iv_y+lv_offset_y(1).
+          <lcs_value> = lcs[ lv_index_y - 1 ][ lv_index_x - 1 ] + 1.
           IF <lcs_value> > ev_length.
             ev_length = <lcs_value>.
-            ev_x_offset = lv_index_x + 1 - ev_length.
-            ev_y_offset = lv_index_y + 1 - ev_length.
+            ev_x_offset = lv_offset_x + 1 - ev_length.
+            ev_y_offset = lv_offset_y + 1 - ev_length.
           ENDIF.
         ELSE.
           " 0
@@ -298,7 +301,7 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
     ENDCASE.
     IF is_replace_rule-ns_to IS NOT INITIAL.
       lv_char100 = is_replace_rule-ns_to && lv_char100.
-      lv_offset = strlen( lv_char100 ).
+      lv_offset = strlen( is_replace_rule-ns_to ).
     ENDIF.
 
     IF is_replace_rule-beg_from IS INITIAL.
@@ -418,6 +421,9 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
       IF lv_y_offset > 0.
         es_replace_rule-beg_to = lv_y(lv_y_offset).
       ENDIF.
+      IF es_replace_rule-end_from EQ es_replace_rule-beg_to.
+        CLEAR: es_replace_rule-end_from, es_replace_rule-beg_to.
+      ENDIF.
 
       " end part
 *      lv_x_offset = strlen( es_replace_rule-ns_from ) + lv_x_offset + lv_length.
@@ -428,6 +434,9 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
       lv_y_offset = strlen( es_replace_rule-ns_to ) + lv_y_offset + lv_length.
       IF lv_y_offset < 32.
         es_replace_rule-end_to = lv_to+lv_y_offset.
+      ENDIF.
+      IF es_replace_rule-end_from EQ es_replace_rule-end_to.
+        CLEAR: es_replace_rule-end_from, es_replace_rule-end_to.
       ENDIF.
     ENDIF.
 
