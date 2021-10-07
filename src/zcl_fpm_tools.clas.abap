@@ -1,85 +1,91 @@
-CLASS zcl_fpm_tools DEFINITION
-  PUBLIC
-  CREATE PUBLIC .
+class ZCL_FPM_TOOLS definition
+  public
+  create public .
 
-  PUBLIC SECTION.
+public section.
 
-    TYPES:
-      BEGIN OF ts_uibb_info,
+  types:
+    BEGIN OF ts_uibb_info,
         config_id                TYPE wdy_config_id,
         feeder_class             TYPE fpmgb_feeder_class,
         feeder_param             TYPE string,
         config_description       TYPE wdy_md_description,
         feeder_class_description TYPE wdy_md_description,
       END OF ts_uibb_info .
-    TYPES:
-      tt_uibb_info TYPE TABLE OF ts_uibb_info .
+  types:
+    tt_uibb_info TYPE TABLE OF ts_uibb_info .
 
-    CLASS-METHODS get_fpm_tree
-      IMPORTING
-        !iv_wdca              TYPE wdy_config_id
-        !iv_read_feeder_class TYPE flag OPTIONAL
-        !iv_read_feeder_param TYPE flag OPTIONAL
-        !iv_read_description  TYPE flag OPTIONAL
-      EXPORTING
-        !et_uibb_info         TYPE tt_uibb_info .
-    CLASS-METHODS get_feeder_class
-      IMPORTING
-        !iv_config_id         TYPE wdy_config_id
-        !iv_read_feeder_param TYPE flag DEFAULT abap_true
-      EXPORTING
-        !ev_feeder_class      TYPE seoclsname
-        !ev_feeder_param      TYPE string .
-    CLASS-METHODS set_feeder_class
-      IMPORTING
-        !iv_config_id        TYPE wdy_config_id
-        !iv_feeder_class     TYPE seoclsname
-        !iv_feeder_param     TYPE string OPTIONAL
-        !iv_set_feeder_param TYPE flag DEFAULT abap_true .
-    CLASS-METHODS suggest_object_name
-      IMPORTING
-        !iv_name        TYPE clike
-        !iv_typekind    TYPE ddtypekind OPTIONAL
-        !iv_next_number TYPE flag OPTIONAL
-      RETURNING
-        VALUE(rv_name)  TYPE string .
-    CLASS-METHODS set_application
-      IMPORTING
-        !iv_wdca TYPE wdy_config_id
-        !iv_appl TYPE wdy_application_name .
-    CLASS-METHODS get_description
-      IMPORTING
-        !iv_name              TYPE clike
-        !iv_typekind          TYPE ddtypekind
-      RETURNING
-        VALUE(rv_description) TYPE string .
-    CLASS-METHODS set_description
-      IMPORTING
-        !iv_name        TYPE clike
-        !iv_typekind    TYPE ddtypekind
-        !iv_description TYPE clike .
-    CLASS-METHODS corr_insert
-      IMPORTING
-        !iv_name     TYPE clike
-        !iv_typekind TYPE ddtypekind .
-    CLASS-METHODS can_inherit
-      IMPORTING
-        !iv_class             TYPE seoclsname
-        !iv_message           TYPE flag OPTIONAL
-      RETURNING
-        VALUE(rv_can_inherit) TYPE flag .
-    CLASS-METHODS delete_fpm_tree
-      IMPORTING
-        !iv_wdca              TYPE wdy_config_id
-        !iv_with_feeder_class TYPE flag OPTIONAL .
-    CLASS-METHODS export_fpm_tree
-      IMPORTING
-        !iv_wdca      TYPE wdy_config_id
-      RETURNING
-        VALUE(rv_zip) TYPE xstring .
-    CLASS-METHODS import_fpm_tree
-      IMPORTING
-        !iv_zip TYPE xstring .
+  class-methods GET_FPM_TREE
+    importing
+      !IV_WDCA type WDY_CONFIG_ID
+      !IV_READ_FEEDER_CLASS type FLAG optional
+      !IV_READ_FEEDER_PARAM type FLAG optional
+      !IV_READ_DESCRIPTION type FLAG optional
+    exporting
+      !ET_UIBB_INFO type TT_UIBB_INFO .
+  class-methods GET_FEEDER_CLASS
+    importing
+      !IV_CONFIG_ID type WDY_CONFIG_ID
+      !IV_READ_FEEDER_PARAM type FLAG default ABAP_TRUE
+    exporting
+      !EV_FEEDER_CLASS type SEOCLSNAME
+      !EV_FEEDER_PARAM type STRING .
+  class-methods SET_FEEDER_CLASS
+    importing
+      !IV_CONFIG_ID type WDY_CONFIG_ID
+      !IV_FEEDER_CLASS type SEOCLSNAME
+      !IV_FEEDER_PARAM type STRING optional
+      !IV_SET_FEEDER_PARAM type FLAG default ABAP_TRUE .
+  class-methods SUGGEST_OBJECT_NAME
+    importing
+      !IV_NAME type CLIKE
+      !IV_TYPEKIND type DDTYPEKIND optional
+      !IV_NEXT_NUMBER type FLAG optional
+    returning
+      value(RV_NAME) type STRING .
+  class-methods SET_APPLICATION
+    importing
+      !IV_WDCA type WDY_CONFIG_ID
+      !IV_APPL type WDY_APPLICATION_NAME .
+  class-methods GET_DESCRIPTION
+    importing
+      !IV_NAME type CLIKE
+      !IV_TYPEKIND type DDTYPEKIND
+    returning
+      value(RV_DESCRIPTION) type STRING .
+  class-methods SET_DESCRIPTION
+    importing
+      !IV_NAME type CLIKE
+      !IV_TYPEKIND type DDTYPEKIND
+      !IV_DESCRIPTION type CLIKE .
+  class-methods CORR_INSERT
+    importing
+      !IV_NAME type CLIKE
+      !IV_TYPEKIND type DDTYPEKIND .
+  class-methods CAN_INHERIT
+    importing
+      !IV_CLASS type SEOCLSNAME
+      !IV_MESSAGE type FLAG optional
+    returning
+      value(RV_CAN_INHERIT) type FLAG .
+  class-methods DELETE_FPM_TREE
+    importing
+      !IV_WDCA type WDY_CONFIG_ID
+      !IV_WITH_FEEDER_CLASS type FLAG optional .
+  class-methods EXPORT_FPM_TREE
+    importing
+      !IV_WDCA type WDY_CONFIG_ID
+    returning
+      value(RV_ZIP) type XSTRING .
+  class-methods IMPORT_FPM_TREE
+    importing
+      !IV_ZIP type XSTRING .
+  class-methods SAVE_WDCC
+    importing
+      !IS_WDCC type WDY_CONFIG_DATA .
+  class-methods SAVE_WDCA
+    importing
+      !IS_WDCA type WDY_CONFIG_APPL .
   PROTECTED SECTION.
 
     CLASS-METHODS add_json_to_zip
@@ -184,7 +190,10 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
     SELECT SINGLE application
       INTO lv_application
       FROM wdy_config_appl
-      WHERE config_id = iv_wdca.
+      WHERE config_id = iv_wdca
+        AND config_type = '02'
+        AND config_var = ''
+    .
     IF sy-subrc <> 0.
       " not found
       RETURN.
@@ -299,7 +308,10 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
     SELECT SINGLE application
       INTO lv_application
       FROM wdy_config_appl
-      WHERE config_id = iv_wdca.
+      WHERE config_id = iv_wdca
+        AND config_type = '02'
+        AND config_var = ''
+    .
     IF sy-subrc <> 0.
       " not found
       RETURN.
@@ -320,7 +332,10 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
         SELECT SINGLE *
           INTO ls_wdy_config_data
           FROM wdy_config_data
-          WHERE config_id = ls_uibb_info-config_id.
+          WHERE config_id = ls_uibb_info-config_id
+            AND config_type = '00'
+            AND config_var = ''
+        .
         CHECK: sy-subrc EQ 0.
         lo_zip->add(
           EXPORTING
@@ -333,16 +348,24 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
         SELECT *
           INTO TABLE lt_wdy_config_datt
           FROM wdy_config_datt
-          WHERE config_id = ls_uibb_info-config_id.
+          WHERE config_id = ls_uibb_info-config_id
+            AND config_type = '00'
+            AND config_var = ''
+        .
         SELECT *
           APPENDING TABLE lt_wdy_config_compt
           FROM wdy_config_compt
-          WHERE config_id = ls_uibb_info-config_id.
+          WHERE config_id = ls_uibb_info-config_id
+            AND config_type = '00'
+            AND config_var = ''
+        .
         SELECT *
           APPENDING TABLE lt_wdy_conf_delc
           FROM wdy_conf_delc
-          WHERE config_id = ls_uibb_info-config_id.
-
+          WHERE config_id = ls_uibb_info-config_id
+            AND config_type = '00'
+            AND config_var = ''
+        .
       ENDLOOP.
 
       IF lt_wdy_config_data IS NOT INITIAL.
@@ -391,7 +414,10 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
     SELECT SINGLE *
       INTO ls_wdy_config_appl
       FROM wdy_config_appl
-      WHERE config_id = iv_wdca.
+      WHERE config_id = iv_wdca
+        AND config_type = '02'
+        AND config_var = ''
+    .
     lo_zip->add(
       EXPORTING
         name           = get_wdca_xml_filename( iv_wdca )
@@ -403,12 +429,17 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
     SELECT *
       INTO TABLE lt_wdy_config_appt
       FROM wdy_config_appt
-      WHERE config_id = iv_wdca.
+      WHERE config_id = iv_wdca
+        AND config_type = '02'
+        AND config_var = ''
+    .
     SELECT *
       APPENDING TABLE lt_wdy_conf_dela
       FROM wdy_conf_dela
-      WHERE config_id = iv_wdca.
-
+      WHERE config_id = iv_wdca
+        AND config_type = '02'
+        AND config_var = ''
+    .
 
     IF lt_wdy_config_appl IS NOT INITIAL.
       add_json_to_zip(
@@ -498,12 +529,16 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
           INTO rv_description
           FROM wdy_config_appt
           WHERE config_id = iv_name
+            AND config_type = '02'
+            AND config_var = ''
             AND langu = sy-langu.
       WHEN 'WDCC'.    " R3TR  WDCC  Web Dynpro Component Configuration
         SELECT SINGLE description
           INTO rv_description
           FROM wdy_config_datt
           WHERE config_id = iv_name
+            AND config_type = '00'
+            AND config_var = ''
             AND langu = sy-langu.
       WHEN 'WDYA'.    " R3TR  WDYA  Web Dynpro Application
         SELECT SINGLE description
@@ -542,6 +577,8 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
       INTO ls_wdcc
       FROM wdy_config_data
       WHERE config_id = iv_config_id
+        AND config_type = '00'
+        AND config_var = ''
     .
     CHECK: sy-subrc EQ 0.
 
@@ -840,9 +877,9 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
           OTHERS                  = 3
       ).
 
-      DELETE FROM wdy_config_appl WHERE config_id = <ls_wdy_config_appl>-config_id.
-      DELETE FROM wdy_config_appt WHERE config_id = <ls_wdy_config_appl>-config_id.
-      DELETE FROM wdy_conf_dela WHERE config_id = <ls_wdy_config_appl>-config_id.
+      DELETE FROM wdy_config_appl WHERE config_id = <ls_wdy_config_appl>-config_id AND config_type = <ls_wdy_config_appl>-config_type AND config_var = <ls_wdy_config_appl>-config_var.
+      DELETE FROM wdy_config_appt WHERE config_id = <ls_wdy_config_appl>-config_id AND config_type = <ls_wdy_config_appl>-config_type AND config_var = <ls_wdy_config_appl>-config_var.
+      DELETE FROM wdy_conf_dela WHERE config_id = <ls_wdy_config_appl>-config_id AND config_type = <ls_wdy_config_appl>-config_type AND config_var = <ls_wdy_config_appl>-config_var.
     ENDLOOP.
 
 
@@ -881,10 +918,10 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
           OTHERS                  = 3
       ).
 
-      DELETE FROM wdy_config_data WHERE config_id = <ls_wdy_config_data>-config_id.
-      DELETE FROM wdy_config_datt WHERE config_id = <ls_wdy_config_data>-config_id.
-      DELETE FROM wdy_config_compt WHERE config_id = <ls_wdy_config_data>-config_id.
-      DELETE FROM wdy_conf_delc WHERE config_id = <ls_wdy_config_data>-config_id.
+      DELETE FROM wdy_config_data WHERE config_id = <ls_wdy_config_data>-config_id AND config_type = <ls_wdy_config_data>-config_type AND config_var = <ls_wdy_config_data>-config_var.
+      DELETE FROM wdy_config_datt WHERE config_id = <ls_wdy_config_data>-config_id AND config_type = <ls_wdy_config_data>-config_type AND config_var = <ls_wdy_config_data>-config_var.
+      DELETE FROM wdy_config_compt WHERE config_id = <ls_wdy_config_data>-config_id AND config_type = <ls_wdy_config_data>-config_type AND config_var = <ls_wdy_config_data>-config_var.
+      DELETE FROM wdy_conf_delc WHERE config_id = <ls_wdy_config_data>-config_id AND config_type = <ls_wdy_config_data>-config_type AND config_var = <ls_wdy_config_data>-config_var.
     ENDLOOP.
 
 
@@ -1036,24 +1073,18 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
       INTO ls_wdca
       FROM wdy_config_appl
       WHERE config_id = iv_wdca
+        AND config_type = '02'
+        AND config_var = ''
     .
     CHECK: sy-subrc EQ 0.
-
-
-    corr_insert(
-      EXPORTING
-        iv_name     = iv_wdca
-        iv_typekind = 'WDCA'
-    ).
-
 
     ls_wdca-application = iv_appl.
     lv_string = cl_wdr_configuration_utils=>xml_xstring2string( in_xstring = ls_wdca-xcontent ).
     REPLACE REGEX '<Application Name="[^"]*"' IN lv_string WITH '<Application Name="' && iv_appl && '"'.
     REPLACE REGEX 'Usage="[^"]*"' IN lv_string WITH 'Usage="' && iv_appl && '"'.
     ls_wdca-xcontent = cl_wdr_configuration_utils=>xml_string2xstring( in_string = lv_string ).
-    MODIFY wdy_config_appl CONNECTION (if_wdr_cfg_constants=>c_db_con_name) FROM ls_wdca.
-    COMMIT CONNECTION (if_wdr_cfg_constants=>c_db_con_name).
+
+    save_wdca( is_wdca = ls_wdca ).
   ENDMETHOD.
 
 
@@ -1111,15 +1142,10 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
       INTO ls_wdcc
       FROM wdy_config_data
       WHERE config_id = iv_config_id
-    .
+        AND config_type = '00'
+        AND config_var = ''
+   .
     CHECK: sy-subrc EQ 0.
-
-
-    corr_insert(
-      EXPORTING
-        iv_name     = iv_config_id
-        iv_typekind = 'WDCC'
-    ).
 
     lv_string = cl_wdr_configuration_utils=>xml_xstring2string( in_xstring = ls_wdcc-xcontent ).
 
@@ -1178,11 +1204,7 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
 
     IF lv_need_to_save EQ abap_true.
       ls_wdcc-xcontent = cl_wdr_configuration_utils=>xml_string2xstring( in_string = lv_string ).
-      cl_wdr_cfg_persistence_utils=>save_comp_config_to_db(
-        EXPORTING
-          config_data = ls_wdcc
-          translator  = lo_translator
-      ).
+      save_wdcc( is_wdcc = ls_wdcc ).
     ENDIF.
   ENDMETHOD.
 
@@ -1240,7 +1262,9 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
           SELECT SINGLE config_id
             INTO rv_name
             FROM wdy_config_appl
-            WHERE config_id = rv_name.
+            WHERE config_id = rv_name
+              AND config_type = '02'
+              AND config_var = ''.
           IF sy-subrc <> 0.
             RETURN.
           ENDIF.
@@ -1248,7 +1272,9 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
           SELECT SINGLE config_id
             INTO rv_name
             FROM wdy_config_data
-            WHERE config_id = rv_name.
+            WHERE config_id = rv_name
+              AND config_type = '00'
+              AND config_var = ''.
           IF sy-subrc <> 0.
             RETURN.
           ENDIF.
@@ -1357,5 +1383,107 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
     ENDCASE.
 
     rv_can_inherit = abap_true.
+  ENDMETHOD.
+
+
+  METHOD save_wdca.
+    DATA: ls_wdy_config_key TYPE wdy_config_key,
+          lo_translator	    TYPE REF TO if_wdr_config_otr,
+          lv_devclass	      TYPE devclass,
+          lv_trkorr	        TYPE trkorr.
+
+
+    ls_wdy_config_key-config_id = is_wdca-config_id.
+    ls_wdy_config_key-config_type = is_wdca-config_type.
+    ls_wdy_config_key-config_var = is_wdca-config_var.
+
+    CALL FUNCTION 'RS_CORR_INSERT'
+      EXPORTING
+        object              = ls_wdy_config_key         " Object name
+        object_class        = 'WDCA'
+        global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
+      IMPORTING
+        devclass            = lv_devclass
+        korrnum             = lv_trkorr
+      EXCEPTIONS
+        cancelled           = 1              " Processing cancelled
+        permission_failure  = 2              " No correction entry possible
+        unknown_objectclass = 3              " Object class not recognised
+        OTHERS              = 4.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+
+
+    MODIFY wdy_config_appl CONNECTION (if_wdr_cfg_constants=>c_db_con_name) FROM is_wdca.
+    COMMIT CONNECTION (if_wdr_cfg_constants=>c_db_con_name).
+
+
+    cl_wdr_cfg_persistence_utils=>config_changed(
+      EXPORTING
+        action              = if_wd_cfg_badi_changes=>co_action_modify
+        config_key          = ls_wdy_config_key          " Key Components of Configuration Tables
+        devclass            = lv_devclass            " Package
+        environment         = if_wd_cfg_badi_changes=>co_env_gui
+        is_component        = abap_false
+        object_name         = is_wdca-application         " Web Dynpro: Component Name
+        pers_scope          = if_wd_personalization=>co_scope_config          " Web Dynpro: Personalization Range
+        transport           = lv_trkorr           " Request/Task
+    ).
+
+
+  ENDMETHOD.
+
+
+  METHOD save_wdcc.
+    DATA: ls_wdy_config_key TYPE wdy_config_key,
+          lo_translator	    TYPE REF TO if_wdr_config_otr,
+          lv_devclass	      TYPE devclass,
+          lv_trkorr	        TYPE trkorr.
+
+
+    ls_wdy_config_key-config_id = is_wdcc-config_id.
+    ls_wdy_config_key-config_type = is_wdcc-config_type.
+    ls_wdy_config_key-config_var = is_wdcc-config_var.
+
+    CALL FUNCTION 'RS_CORR_INSERT'
+      EXPORTING
+        object              = ls_wdy_config_key         " Object name
+        object_class        = 'WDCC'
+        global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
+      IMPORTING
+        devclass            = lv_devclass
+        korrnum             = lv_trkorr
+      EXCEPTIONS
+        cancelled           = 1              " Processing cancelled
+        permission_failure  = 2              " No correction entry possible
+        unknown_objectclass = 3              " Object class not recognised
+        OTHERS              = 4.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+
+
+    cl_wdr_cfg_persistence_utils=>save_comp_config_to_db(
+      EXPORTING
+        config_data = is_wdcc
+        translator  = lo_translator
+    ).
+
+    cl_wdr_cfg_persistence_utils=>config_changed(
+      EXPORTING
+        action              = if_wd_cfg_badi_changes=>co_action_modify
+        config_key          = ls_wdy_config_key          " Key Components of Configuration Tables
+        devclass            = lv_devclass            " Package
+        environment         = if_wd_cfg_badi_changes=>co_env_gui
+        is_component        = abap_true
+        object_name         = is_wdcc-component         " Web Dynpro: Component Name
+        pers_scope          = if_wd_personalization=>co_scope_config          " Web Dynpro: Personalization Range
+        transport           = lv_trkorr           " Request/Task
+    ).
   ENDMETHOD.
 ENDCLASS.

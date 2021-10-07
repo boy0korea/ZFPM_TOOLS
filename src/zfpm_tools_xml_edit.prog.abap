@@ -21,6 +21,8 @@ SELECTION-SCREEN BEGIN OF LINE.
   PARAMETERS: pa_enho TYPE enhname MODIF ID en.
 SELECTION-SCREEN END OF LINE.
 
+PARAMETERS: p_edit TYPE flag DEFAULT 'X' NO-DISPLAY.
+
 **********************************************************************
 INITIALIZATION.
 **********************************************************************
@@ -515,6 +517,8 @@ FORM load_xml .
       INTO gs_wdy_config_data
       FROM wdy_config_data
       WHERE config_id = pa_wdcc
+        AND config_type = '00'
+        AND config_var = ''
     .
     ASSIGN COMPONENT 'XCONTENT' OF STRUCTURE gs_wdy_config_data TO <gv_xstr>.
     MOVE-CORRESPONDING gs_wdy_config_data TO gs_wdy_config_key.
@@ -523,6 +527,8 @@ FORM load_xml .
       INTO gs_wdy_config_appl
       FROM wdy_config_appl
       WHERE config_id = pa_wdca
+        AND config_type = '02'
+        AND config_var = ''
     .
     ASSIGN COMPONENT 'XCONTENT' OF STRUCTURE gs_wdy_config_appl TO <gv_xstr>.
     MOVE-CORRESPONDING gs_wdy_config_appl TO gs_wdy_config_key.
@@ -578,6 +584,11 @@ FORM load_xml .
 
 ENDFORM.                    " LOAD_XML
 FORM enqueue.
+  IF p_edit EQ abap_false.
+    gv_readonly = abap_true.
+    EXIT.
+  ENDIF.
+
   IF pr_wdcc EQ 'X'.
     CALL FUNCTION 'RS_CORR_INSERT'
       EXPORTING

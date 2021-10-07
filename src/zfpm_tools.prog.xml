@@ -2708,15 +2708,27 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>PR_FBIV</KEY>
+     <ENTRY>execute FBI view search</ENTRY>
+     <LENGTH>31</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>PR_FPMWB</KEY>
-     <ENTRY>FPM_WB</ENTRY>
-     <LENGTH>14</LENGTH>
+     <ENTRY>execute FPM_WB</ENTRY>
+     <LENGTH>22</LENGTH>
     </item>
     <item>
      <ID>S</ID>
      <KEY>PR_IMPO</KEY>
      <ENTRY>Import</ENTRY>
      <LENGTH>14</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>PR_XMLE</KEY>
+     <ENTRY>execute Edit xml</ENTRY>
+     <LENGTH>24</LENGTH>
     </item>
    </TPOOL>
   </asx:values>

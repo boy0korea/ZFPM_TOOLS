@@ -342,7 +342,10 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
     SELECT SINGLE application
       INTO es_fpm_name_map-application
       FROM wdy_config_appl
-      WHERE config_id = iv_from.
+      WHERE config_id = iv_from
+        AND config_type = '02'
+        AND config_var = ''
+    .
     IF sy-subrc <> 0.
       " not found
       RETURN.

@@ -10,6 +10,8 @@ PARAMETERS: pr_edit  TYPE flag RADIOBUTTON GROUP rd DEFAULT 'X' USER-COMMAND rd,
             pr_dele  TYPE flag RADIOBUTTON GROUP rd,
             pr_impo  TYPE flag RADIOBUTTON GROUP rd,
             pr_expo  TYPE flag RADIOBUTTON GROUP rd,
+            pr_xmle  TYPE flag RADIOBUTTON GROUP rd,
+            pr_fbiv  TYPE flag RADIOBUTTON GROUP rd,
             pr_fpmwb TYPE flag RADIOBUTTON GROUP rd.
 
 SELECTION-SCREEN ULINE.
@@ -45,6 +47,7 @@ START-OF-SELECTION.
 **********************************************************************
   DATA: gt_uibb_info      TYPE zcl_fpm_tools=>tt_uibb_info,
         gt_uibb_info_old  TYPE zcl_fpm_tools=>tt_uibb_info,
+        gv_edit_mode      TYPE flag,
         gv_alv_first_time TYPE flag.
 
 **********************************************************************
@@ -128,7 +131,9 @@ FORM loop_screen.
         ENDCASE.
         MODIFY SCREEN.
       ENDLOOP.
-    WHEN pr_fpmwb.
+    WHEN pr_xmle
+      OR pr_fbiv
+      OR pr_fpmwb.
       LOOP AT SCREEN.
         CHECK: screen-group1 IS NOT INITIAL.
         screen-active = 0.
@@ -195,6 +200,10 @@ FORM execute.
       PERFORM execute_import.
     WHEN pr_expo.
       PERFORM execute_export.
+    WHEN pr_xmle.
+      CALL TRANSACTION 'ZFPM_TOOLS_XML_EDIT'.
+    WHEN pr_fbiv.
+      CALL TRANSACTION 'ZFBI_VIEW_SEARCH'.
     WHEN pr_fpmwb.
       CALL TRANSACTION 'FPM_WB'.
   ENDCASE.
@@ -205,7 +214,18 @@ FORM execute_edit.
   DATA: lt_uibb_info    TYPE zcl_fpm_tools=>tt_uibb_info,
         lt_fieldcat_lvc TYPE lvc_t_fcat,
         ls_layout_lvc   TYPE lvc_s_layo,
+        lt_excluding    TYPE slis_t_extab,
         ls_exit_by_user TYPE slis_exit_by_user.
+
+  AUTHORITY-CHECK OBJECT 'S_DEVELOP' ID 'ACTVT' FIELD '02'.
+  IF sy-subrc EQ 0.
+    gv_edit_mode = abap_true.
+  ELSE.
+    gv_edit_mode = abap_false.
+    APPEND VALUE #( fcode = 'SAVE' ) TO lt_excluding.
+    APPEND VALUE #( fcode = 'COPY_FC' ) TO lt_excluding.
+    APPEND VALUE #( fcode = 'INHERIT_FC' ) TO lt_excluding.
+  ENDIF.
 
   zcl_fpm_tools=>get_fpm_tree(
     EXPORTING
@@ -219,13 +239,15 @@ FORM execute_edit.
   gt_uibb_info_old = gt_uibb_info.
   CHECK: gt_uibb_info IS NOT INITIAL.
 
+  APPEND VALUE #( fcode = '&OUP' ) TO lt_excluding.
+  APPEND VALUE #( fcode = '&ODN' ) TO lt_excluding.
   ls_layout_lvc-zebra = abap_true.
   ls_layout_lvc-no_rowmark = abap_true.
   lt_fieldcat_lvc = VALUE #(
     ( fieldname = 'CONFIG_ID' rollname = 'WDY_CONFIG_ID' outputlen = 32 )
-    ( fieldname = 'CONFIG_DESCRIPTION' rollname = 'WDY_MD_DESCRIPTION' outputlen = 60 lowercase = abap_true edit = abap_true )
-    ( fieldname = 'FEEDER_CLASS' rollname = 'FPMGB_FEEDER_CLASS' outputlen = 32 edit = abap_true )
-    ( fieldname = 'FEEDER_CLASS_DESCRIPTION' rollname = 'WDY_MD_DESCRIPTION' outputlen = 60 lowercase = abap_true edit = abap_true )
+    ( fieldname = 'CONFIG_DESCRIPTION' rollname = 'WDY_MD_DESCRIPTION' outputlen = 60 lowercase = abap_true edit = gv_edit_mode )
+    ( fieldname = 'FEEDER_CLASS' rollname = 'FPMGB_FEEDER_CLASS' outputlen = 32 edit = gv_edit_mode )
+    ( fieldname = 'FEEDER_CLASS_DESCRIPTION' rollname = 'WDY_MD_DESCRIPTION' outputlen = 60 lowercase = abap_true edit = gv_edit_mode )
     ( fieldname = 'FEEDER_PARAM' reptext = 'Parameter' outputlen = 200 edit = abap_false )
   ).
   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY_LVC'
@@ -245,7 +267,7 @@ FORM execute_edit.
 *     i_grid_settings          = i_grid_settings            " Grid settings
       is_layout_lvc            = ls_layout_lvc              " List Layout Specifications
       it_fieldcat_lvc          = lt_fieldcat_lvc            " Field Catalog with Field Descriptions
-      it_excluding             = VALUE slis_t_extab( ( fcode = '&OUP' ) ( fcode = '&ODN' ) )               " Table of inactive function codes
+      it_excluding             = lt_excluding               " Table of inactive function codes
 *     it_special_groups_lvc    = it_special_groups_lvc      " Grouping fields for column selection
 *     it_sort_lvc              = it_sort_lvc                " Sort criteria for first list display
 *     it_filter_lvc            = it_filter_lvc              " Filter criteria for first list output
@@ -330,12 +352,20 @@ FORM edit_user_command USING pv_ucomm ps_select TYPE slis_selfield.
   ENDCASE.
 ENDFORM.
 FORM do_xml_wdcc USING iv_wdcc.
-  SUBMIT zfpm_tools_xml_edit WITH pr_wdcc = abap_true WITH pa_wdcc = iv_wdcc AND RETURN.
+  SUBMIT zfpm_tools_xml_edit WITH pr_wdcc = abap_true WITH pa_wdcc = iv_wdcc WITH p_edit = gv_edit_mode AND RETURN.
 ENDFORM.
 FORM do_feeder USING iv_class.
+  DATA: lv_operation TYPE seu_action.
+
+  CHECK: iv_class IS NOT INITIAL.
+  IF gv_edit_mode EQ abap_true.
+    lv_operation = 'EDIT'.
+  ELSE.
+    lv_operation = 'SHOW'.
+  ENDIF.
   CALL FUNCTION 'RS_TOOL_ACCESS'
     EXPORTING
-      operation           = 'EDIT'    " Operation
+      operation           = lv_operation    " Operation
       object_name         = iv_class    " Object Name
       object_type         = 'CLAS'    " Object Type
     EXCEPTIONS
@@ -498,6 +528,7 @@ FORM do_se80 USING iv_wdcc.
   DATA: lv_object_name    TYPE char40,
         ls_wdy_config_key TYPE wdy_config_key.
 
+  CHECK: iv_wdcc IS NOT INITIAL.
   ls_wdy_config_key-config_id = iv_wdcc.
   lv_object_name = ls_wdy_config_key.
 
@@ -521,10 +552,14 @@ FORM do_web_cfg USING iv_wdcc.
         ls_parameter       TYPE ihttpnvp,
         ls_wdy_config_data TYPE wdy_config_data.
 
+  CHECK: iv_wdcc IS NOT INITIAL.
+
   SELECT SINGLE *
     INTO ls_wdy_config_data
     FROM wdy_config_data
-    WHERE config_id = iv_wdcc.
+    WHERE config_id = iv_wdcc
+      AND config_type = '00'
+      AND config_var = ''.
   CHECK: sy-subrc EQ 0.
 
   lv_application = 'CONFIGURE_COMPONENT'.
@@ -535,7 +570,11 @@ FORM do_web_cfg USING iv_wdcc.
   APPEND ls_parameter TO lt_parameter.
   CLEAR: ls_parameter.
   ls_parameter-name = 'ACTION'.
-  ls_parameter-value = 'CHANGE'.
+  IF gv_edit_mode EQ abap_true.
+    ls_parameter-value = 'CHANGE'.
+  ELSE.
+    ls_parameter-value = 'DISPLAY'.
+  ENDIF.
   APPEND ls_parameter TO lt_parameter.
 
   CLEAR: ls_parameter.
