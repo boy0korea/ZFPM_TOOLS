@@ -304,6 +304,10 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
       lv_offset = strlen( is_replace_rule-ns_to ).
     ENDIF.
 
+    IF lv_char100+lv_offset(3) EQ 'CL_'.
+      lv_offset = lv_offset + 3.
+    ENDIF.
+
     IF is_replace_rule-beg_from IS INITIAL.
       IF is_replace_rule-beg_to IS NOT INITIAL.
         lv_char100+lv_offset = is_replace_rule-beg_to && lv_char100+lv_offset.
