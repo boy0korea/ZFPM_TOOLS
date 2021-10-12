@@ -331,12 +331,24 @@ FORM edit_user_command USING pv_ucomm ps_select TYPE slis_selfield.
 
   CASE pv_ucomm.
     WHEN '&IC1'. "this is for double click on alv output.
+*NAME 1 Types /BOFU/FBI_VIEW  CHAR  50  0 0 FBI View
+*BO 1 Types /BOFU/BO  CHAR  30  0 0 Business Object
+*NODE 1 Types /BOFU/NODE  CHAR  30  0 0 Node
+*UI_STRUCTURE 1 Types /BOFU/FBI_NODE_UI_STRUCT  CHAR  30  0 0 Node UI Structure
+*UI_MAPPER_CLS  1 Types /BOFU/FBI_NODE_UI_MAPPER  CHAR  30  0 0 UI Mapper Class for Business Object Node
+*UI_EXIT_INTF_CLS 1 Types /BOFU/FBI_NODE_EXIT_INTF  CHAR  30  0 0 Exit Interface Class for Business Object Node
+*TECH_FLD_STR 1 Types /BOFU/FBI_TECH_FLD_STRUCT CHAR  30  0 0 Technical Fields Structure for field control
+*OUTPUT_STR 1 Types /BOFU/FBI_OUTPUT_STRUCT CHAR  30  0 0 Output Structure (Data+TechFields+RelatedView Structs)
       CASE ps_select-fieldname.
         WHEN 'NAME'.
           PERFORM do_web_cfg USING ps_select-value.
         WHEN 'UI_MAPPER_CLS'
           OR 'UI_EXIT_INTF_CLS'.
           PERFORM do_class USING ps_select-value.
+        WHEN 'UI_STRUCTURE'
+          OR 'TECH_FLD_STR'
+          OR 'OUTPUT_STR'.
+          PERFORM do_structure USING ps_select-value.
       ENDCASE.
     WHEN 'XML'.
       CHECK: ps_select-tabindex > 0.
@@ -372,6 +384,29 @@ FORM do_class USING iv_class.
       operation           = lv_operation    " Operation
       object_name         = iv_class    " Object Name
       object_type         = 'CLAS'    " Object Type
+    EXCEPTIONS
+      not_executed        = 1
+      invalid_object_type = 2
+      OTHERS              = 3.
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+               WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+ENDFORM.
+FORM do_structure USING iv_structure.
+  DATA: lv_operation TYPE seu_action.
+
+  CHECK: iv_structure IS NOT INITIAL.
+  IF gv_edit_mode EQ abap_true.
+    lv_operation = 'EDIT'.
+  ELSE.
+    lv_operation = 'SHOW'.
+  ENDIF.
+  CALL FUNCTION 'RS_TOOL_ACCESS'
+    EXPORTING
+      operation           = lv_operation    " Operation
+      object_name         = iv_structure    " Object Name
+      object_type         = 'STRU'    " Object Type
     EXCEPTIONS
       not_executed        = 1
       invalid_object_type = 2
@@ -482,6 +517,10 @@ FORM do_save_edit.
           AND config_var = ''
       .
       PERFORM set_header USING ls_wdy_config_data-xcontent ls_outtab_new.
+      ls_outtab_new-changed_by = sy-uname.
+      GET TIME STAMP FIELD ls_outtab_new-changed_on.
+      ls_outtab_new-changedby = sy-uname.
+      ls_outtab_new-changedon = sy-datum.
       zcl_fpm_tools=>save_wdcc( is_wdcc = ls_wdy_config_data ).
     ENDIF.
   ENDLOOP.
