@@ -138,6 +138,67 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD can_inherit.
+    DATA:
+      superclskey TYPE seoclskey,
+      superclass  TYPE vseoclass.
+
+    superclskey-clsname = iv_class.
+
+* check superclass existence
+    CALL FUNCTION 'SEO_CLASS_GET'
+      EXPORTING
+        clskey       = superclskey
+        version      = seoc_version_inactive
+        state        = '0'
+      IMPORTING
+*       SUPERCLASS   =
+        class        = superclass
+      EXCEPTIONS
+        not_existing = 1
+        deleted      = 2
+        is_interface = 3
+        model_only   = 4
+        OTHERS       = 5.
+    IF sy-subrc <> 0.
+      IF iv_message EQ abap_true.
+        MESSAGE ID sy-msgid TYPE 'E' NUMBER sy-msgno
+          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+      RETURN.
+    ENDIF.
+
+* check superclass is final
+    IF superclass-clsfinal = seox_true.
+      IF iv_message EQ abap_true.
+        MESSAGE e109(oo)
+          WITH superclskey-clsname.
+      ENDIF.
+      RETURN.
+    ENDIF.
+
+    CASE superclass-category.
+      WHEN seoc_category_persistent.
+        IF iv_message EQ abap_true.
+          MESSAGE e626(oo).
+        ENDIF.
+        RETURN.
+      WHEN seoc_category_p_agent.
+        IF iv_message EQ abap_true.
+          MESSAGE e630(oo) WITH superclass-clsname.
+        ENDIF.
+        RETURN.
+      WHEN seoc_category_exception.
+        IF iv_message EQ abap_true.
+          MESSAGE e192(oo).
+        ENDIF.
+        RETURN.
+    ENDCASE.
+
+    rv_can_inherit = abap_true.
+  ENDMETHOD.
+
+
   METHOD corr_insert.
     DATA: ls_wdy_config_key TYPE wdy_config_key.
     FIELD-SYMBOLS: <lv_object> TYPE data.
@@ -955,7 +1016,7 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
             p_dark                      = abap_true
           EXCEPTIONS
             enqueue_error               = 1           " Error in Database Enqueue
-            node_not_existing           = 2           " Node does not exist
+            node_not_existing           = 0           " Node does not exist
             node_has_childs             = 3           " Node Has Subnodes
             node_is_aliased             = 4           " Still References to Node
             node_not_in_original_system = 5           " Current System Not Original System of Node
@@ -1062,6 +1123,108 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
     ENDLOOP.
 
 
+  ENDMETHOD.
+
+
+  METHOD save_wdca.
+    DATA: ls_wdy_config_key TYPE wdy_config_key,
+          lo_translator	    TYPE REF TO if_wdr_config_otr,
+          lv_devclass	      TYPE devclass,
+          lv_trkorr	        TYPE trkorr.
+
+
+    ls_wdy_config_key-config_id = is_wdca-config_id.
+    ls_wdy_config_key-config_type = is_wdca-config_type.
+    ls_wdy_config_key-config_var = is_wdca-config_var.
+
+    CALL FUNCTION 'RS_CORR_INSERT'
+      EXPORTING
+        object              = ls_wdy_config_key         " Object name
+        object_class        = 'WDCA'
+        global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
+      IMPORTING
+        devclass            = lv_devclass
+        korrnum             = lv_trkorr
+      EXCEPTIONS
+        cancelled           = 1              " Processing cancelled
+        permission_failure  = 2              " No correction entry possible
+        unknown_objectclass = 3              " Object class not recognised
+        OTHERS              = 4.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+
+
+    MODIFY wdy_config_appl CONNECTION (if_wdr_cfg_constants=>c_db_con_name) FROM is_wdca.
+    COMMIT CONNECTION (if_wdr_cfg_constants=>c_db_con_name).
+
+
+    cl_wdr_cfg_persistence_utils=>config_changed(
+      EXPORTING
+        action              = if_wd_cfg_badi_changes=>co_action_modify
+        config_key          = ls_wdy_config_key          " Key Components of Configuration Tables
+        devclass            = lv_devclass            " Package
+        environment         = if_wd_cfg_badi_changes=>co_env_gui
+        is_component        = abap_false
+        object_name         = is_wdca-application         " Web Dynpro: Component Name
+        pers_scope          = if_wd_personalization=>co_scope_config          " Web Dynpro: Personalization Range
+        transport           = lv_trkorr           " Request/Task
+    ).
+
+
+  ENDMETHOD.
+
+
+  METHOD save_wdcc.
+    DATA: ls_wdy_config_key TYPE wdy_config_key,
+          lo_translator	    TYPE REF TO if_wdr_config_otr,
+          lv_devclass	      TYPE devclass,
+          lv_trkorr	        TYPE trkorr.
+
+
+    ls_wdy_config_key-config_id = is_wdcc-config_id.
+    ls_wdy_config_key-config_type = is_wdcc-config_type.
+    ls_wdy_config_key-config_var = is_wdcc-config_var.
+
+    CALL FUNCTION 'RS_CORR_INSERT'
+      EXPORTING
+        object              = ls_wdy_config_key         " Object name
+        object_class        = 'WDCC'
+        global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
+      IMPORTING
+        devclass            = lv_devclass
+        korrnum             = lv_trkorr
+      EXCEPTIONS
+        cancelled           = 1              " Processing cancelled
+        permission_failure  = 2              " No correction entry possible
+        unknown_objectclass = 3              " Object class not recognised
+        OTHERS              = 4.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+
+
+    cl_wdr_cfg_persistence_utils=>save_comp_config_to_db(
+      EXPORTING
+        config_data = is_wdcc
+        translator  = lo_translator
+    ).
+
+    cl_wdr_cfg_persistence_utils=>config_changed(
+      EXPORTING
+        action              = if_wd_cfg_badi_changes=>co_action_modify
+        config_key          = ls_wdy_config_key          " Key Components of Configuration Tables
+        devclass            = lv_devclass            " Package
+        environment         = if_wd_cfg_badi_changes=>co_env_gui
+        is_component        = abap_true
+        object_name         = is_wdcc-component         " Web Dynpro: Component Name
+        pers_scope          = if_wd_personalization=>co_scope_config          " Web Dynpro: Personalization Range
+        transport           = lv_trkorr           " Request/Task
+    ).
   ENDMETHOD.
 
 
@@ -1322,168 +1485,5 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
       ENDCASE.
     ENDDO.
 
-  ENDMETHOD.
-
-
-  METHOD can_inherit.
-    DATA:
-      superclskey TYPE seoclskey,
-      superclass  TYPE vseoclass.
-
-    superclskey-clsname = iv_class.
-
-* check superclass existence
-    CALL FUNCTION 'SEO_CLASS_GET'
-      EXPORTING
-        clskey       = superclskey
-        version      = seoc_version_inactive
-        state        = '0'
-      IMPORTING
-*       SUPERCLASS   =
-        class        = superclass
-      EXCEPTIONS
-        not_existing = 1
-        deleted      = 2
-        is_interface = 3
-        model_only   = 4
-        OTHERS       = 5.
-    IF sy-subrc <> 0.
-      IF iv_message EQ abap_true.
-        MESSAGE ID sy-msgid TYPE 'E' NUMBER sy-msgno
-          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-      ENDIF.
-      RETURN.
-    ENDIF.
-
-* check superclass is final
-    IF superclass-clsfinal = seox_true.
-      IF iv_message EQ abap_true.
-        MESSAGE e109(oo)
-          WITH superclskey-clsname.
-      ENDIF.
-      RETURN.
-    ENDIF.
-
-    CASE superclass-category.
-      WHEN seoc_category_persistent.
-        IF iv_message EQ abap_true.
-          MESSAGE e626(oo).
-        ENDIF.
-        RETURN.
-      WHEN seoc_category_p_agent.
-        IF iv_message EQ abap_true.
-          MESSAGE e630(oo) WITH superclass-clsname.
-        ENDIF.
-        RETURN.
-      WHEN seoc_category_exception.
-        IF iv_message EQ abap_true.
-          MESSAGE e192(oo).
-        ENDIF.
-        RETURN.
-    ENDCASE.
-
-    rv_can_inherit = abap_true.
-  ENDMETHOD.
-
-
-  METHOD save_wdca.
-    DATA: ls_wdy_config_key TYPE wdy_config_key,
-          lo_translator	    TYPE REF TO if_wdr_config_otr,
-          lv_devclass	      TYPE devclass,
-          lv_trkorr	        TYPE trkorr.
-
-
-    ls_wdy_config_key-config_id = is_wdca-config_id.
-    ls_wdy_config_key-config_type = is_wdca-config_type.
-    ls_wdy_config_key-config_var = is_wdca-config_var.
-
-    CALL FUNCTION 'RS_CORR_INSERT'
-      EXPORTING
-        object              = ls_wdy_config_key         " Object name
-        object_class        = 'WDCA'
-        global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
-      IMPORTING
-        devclass            = lv_devclass
-        korrnum             = lv_trkorr
-      EXCEPTIONS
-        cancelled           = 1              " Processing cancelled
-        permission_failure  = 2              " No correction entry possible
-        unknown_objectclass = 3              " Object class not recognised
-        OTHERS              = 4.
-    IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-    ENDIF.
-
-
-
-    MODIFY wdy_config_appl CONNECTION (if_wdr_cfg_constants=>c_db_con_name) FROM is_wdca.
-    COMMIT CONNECTION (if_wdr_cfg_constants=>c_db_con_name).
-
-
-    cl_wdr_cfg_persistence_utils=>config_changed(
-      EXPORTING
-        action              = if_wd_cfg_badi_changes=>co_action_modify
-        config_key          = ls_wdy_config_key          " Key Components of Configuration Tables
-        devclass            = lv_devclass            " Package
-        environment         = if_wd_cfg_badi_changes=>co_env_gui
-        is_component        = abap_false
-        object_name         = is_wdca-application         " Web Dynpro: Component Name
-        pers_scope          = if_wd_personalization=>co_scope_config          " Web Dynpro: Personalization Range
-        transport           = lv_trkorr           " Request/Task
-    ).
-
-
-  ENDMETHOD.
-
-
-  METHOD save_wdcc.
-    DATA: ls_wdy_config_key TYPE wdy_config_key,
-          lo_translator	    TYPE REF TO if_wdr_config_otr,
-          lv_devclass	      TYPE devclass,
-          lv_trkorr	        TYPE trkorr.
-
-
-    ls_wdy_config_key-config_id = is_wdcc-config_id.
-    ls_wdy_config_key-config_type = is_wdcc-config_type.
-    ls_wdy_config_key-config_var = is_wdcc-config_var.
-
-    CALL FUNCTION 'RS_CORR_INSERT'
-      EXPORTING
-        object              = ls_wdy_config_key         " Object name
-        object_class        = 'WDCC'
-        global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
-      IMPORTING
-        devclass            = lv_devclass
-        korrnum             = lv_trkorr
-      EXCEPTIONS
-        cancelled           = 1              " Processing cancelled
-        permission_failure  = 2              " No correction entry possible
-        unknown_objectclass = 3              " Object class not recognised
-        OTHERS              = 4.
-    IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-    ENDIF.
-
-
-
-    cl_wdr_cfg_persistence_utils=>save_comp_config_to_db(
-      EXPORTING
-        config_data = is_wdcc
-        translator  = lo_translator
-    ).
-
-    cl_wdr_cfg_persistence_utils=>config_changed(
-      EXPORTING
-        action              = if_wd_cfg_badi_changes=>co_action_modify
-        config_key          = ls_wdy_config_key          " Key Components of Configuration Tables
-        devclass            = lv_devclass            " Package
-        environment         = if_wd_cfg_badi_changes=>co_env_gui
-        is_component        = abap_true
-        object_name         = is_wdcc-component         " Web Dynpro: Component Name
-        pers_scope          = if_wd_personalization=>co_scope_config          " Web Dynpro: Personalization Range
-        transport           = lv_trkorr           " Request/Task
-    ).
   ENDMETHOD.
 ENDCLASS.
