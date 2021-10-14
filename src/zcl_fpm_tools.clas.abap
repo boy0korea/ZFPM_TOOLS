@@ -61,7 +61,10 @@ public section.
   class-methods CORR_INSERT
     importing
       !IV_NAME type CLIKE
-      !IV_TYPEKIND type DDTYPEKIND .
+      !IV_TYPEKIND type DDTYPEKIND
+    exporting
+      !EV_DEVCLASS type DEVCLASS
+      !EV_TRKORR type TRKORR .
   class-methods CAN_INHERIT
     importing
       !IV_CLASS type SEOCLSNAME
@@ -147,16 +150,21 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
 
     CASE iv_typekind.
       WHEN 'WDCA'.    " R3TR  WDCA  Web Dynpro Application Configuration
-        ls_wdy_config_key-config_id = iv_name.
-        ls_wdy_config_key-config_type = '02'.
+        IF cl_abap_datadescr=>get_data_type_kind( iv_name ) EQ cl_abap_datadescr=>typekind_struct1.
+          MOVE-CORRESPONDING iv_name TO ls_wdy_config_key.
+        ELSE.
+          ls_wdy_config_key-config_id = iv_name.
+          ls_wdy_config_key-config_type = '02'.
+        ENDIF.
         ASSIGN ls_wdy_config_key TO <lv_object>.
       WHEN 'WDCC'.    " R3TR  WDCC  Web Dynpro Component Configuration
-        ls_wdy_config_key-config_id = iv_name.
-        ls_wdy_config_key-config_type = '00'.
+        IF cl_abap_datadescr=>get_data_type_kind( iv_name ) EQ cl_abap_datadescr=>typekind_struct1.
+          MOVE-CORRESPONDING iv_name TO ls_wdy_config_key.
+        ELSE.
+          ls_wdy_config_key-config_id = iv_name.
+          ls_wdy_config_key-config_type = '00'.
+        ENDIF.
         ASSIGN ls_wdy_config_key TO <lv_object>.
-*      WHEN 'WDYA'.    " R3TR  WDYA  Web Dynpro Application
-*      WHEN 'WDYN'.    " R3TR  WDYN  Web Dynpro Component
-*      WHEN 'CLAS'.    " R3TR  CLAS  Class (ABAP Objects)
       WHEN OTHERS.
         ASSIGN iv_name TO <lv_object>.
     ENDCASE.
@@ -167,6 +175,9 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
         object_class        = iv_typekind
 *       mode                = 'I'          " I(nsert), if object new
         global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
+      IMPORTING
+        devclass            = ev_devclass       " Package
+        korrnum             = ev_trkorr        " Correction number
       EXCEPTIONS
         cancelled           = 1              " Processing cancelled
         permission_failure  = 2              " No correction entry possible
@@ -1270,11 +1281,15 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
             FIND '</Node>' IN SECTION OFFSET lv_offset2 OF lv_string MATCH OFFSET lv_offset2.
             lv_offset2 = lv_offset2 + 7.
           ENDIF.
-          lv_string = lv_string(lv_offset)
-                   && |<Node Name="APP_SPECIFIC_CC" SimpleFormat="true"><Item Index="000001" SimpleFormat="true"><COMPONENT>{ iv_feeder_class }</COMPONENT></Item></Node>|
-                   && lv_string+lv_offset2.
-          lv_need_to_save = abap_true.
+        ELSE.
+          FIND '</Item></Node></Item></Node></Component>' IN lv_string MATCH OFFSET lv_offset.
+          lv_offset2 = lv_offset.
         ENDIF.
+        lv_string = lv_string(lv_offset)
+                 && |<Node Name="APP_SPECIFIC_CC" SimpleFormat="true"><Item Index="000001" SimpleFormat="true"><COMPONENT>{ iv_feeder_class }</COMPONENT></Item></Node>|
+                 && lv_string+lv_offset2.
+        lv_need_to_save = abap_true.
+
       WHEN OTHERS.
         " find feeder
         FIND REGEX '<FEEDER>[^<]*</FEEDER>' IN lv_string MATCH OFFSET lv_offset MATCH LENGTH lv_length.
@@ -1304,6 +1319,7 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
             lv_need_to_save = abap_true.
           ENDIF.
         ENDIF.
+
     ENDCASE.
 
     IF lv_need_to_save EQ abap_true.
@@ -1501,29 +1517,17 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
     ls_wdy_config_key-config_type = is_wdca-config_type.
     ls_wdy_config_key-config_var = is_wdca-config_var.
 
-    CALL FUNCTION 'RS_CORR_INSERT'
+    corr_insert(
       EXPORTING
-        object              = ls_wdy_config_key         " Object name
-        object_class        = 'WDCA'
-        global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
+        iv_name     = ls_wdy_config_key
+        iv_typekind = 'WDCA'
       IMPORTING
-        devclass            = lv_devclass
-        korrnum             = lv_trkorr
-      EXCEPTIONS
-        cancelled           = 1              " Processing cancelled
-        permission_failure  = 2              " No correction entry possible
-        unknown_objectclass = 3              " Object class not recognised
-        OTHERS              = 4.
-    IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-    ENDIF.
-
-
+        ev_devclass = lv_devclass
+        ev_trkorr   = lv_trkorr
+    ).
 
     MODIFY wdy_config_appl CONNECTION (if_wdr_cfg_constants=>c_db_con_name) FROM is_wdca.
     COMMIT CONNECTION (if_wdr_cfg_constants=>c_db_con_name).
-
 
     cl_wdr_cfg_persistence_utils=>config_changed(
       EXPORTING
@@ -1552,25 +1556,14 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
     ls_wdy_config_key-config_type = is_wdcc-config_type.
     ls_wdy_config_key-config_var = is_wdcc-config_var.
 
-    CALL FUNCTION 'RS_CORR_INSERT'
+    corr_insert(
       EXPORTING
-        object              = ls_wdy_config_key         " Object name
-        object_class        = 'WDCC'
-        global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
+        iv_name     = ls_wdy_config_key
+        iv_typekind = 'WDCC'
       IMPORTING
-        devclass            = lv_devclass
-        korrnum             = lv_trkorr
-      EXCEPTIONS
-        cancelled           = 1              " Processing cancelled
-        permission_failure  = 2              " No correction entry possible
-        unknown_objectclass = 3              " Object class not recognised
-        OTHERS              = 4.
-    IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-    ENDIF.
-
-
+        ev_devclass = lv_devclass
+        ev_trkorr   = lv_trkorr
+    ).
 
     cl_wdr_cfg_persistence_utils=>save_comp_config_to_db(
       EXPORTING
