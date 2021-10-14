@@ -1213,14 +1213,14 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
 
     CASE iv_typekind.
       WHEN 'WDCA'.    " R3TR  WDCA  Web Dynpro Application Configuration
-        DELETE FROM wdy_config_appt WHERE config_id = @iv_name.
+        DELETE FROM wdy_config_appt WHERE config_id = @iv_name AND config_type = '02' AND config_var = ''.
         IF iv_description IS NOT INITIAL.
           MODIFY wdy_config_appt FROM @( VALUE #( config_id = iv_name config_type = '02' langu = sy-langu description = iv_description ) ).
         ENDIF.
       WHEN 'WDCC'.    " R3TR  WDCC  Web Dynpro Component Configuration
-        DELETE FROM wdy_config_datt WHERE config_id = @iv_name.
+        DELETE FROM wdy_config_datt WHERE config_id = @iv_name AND config_type = '00' AND config_var = ''.
         IF iv_description IS NOT INITIAL.
-          MODIFY wdy_config_datt FROM @( VALUE #( config_id = iv_name langu = sy-langu description = iv_description ) ).
+          MODIFY wdy_config_datt FROM @( VALUE #( config_id = iv_name config_type = '00' langu = sy-langu description = iv_description ) ).
         ENDIF.
       WHEN 'WDYA'.    " R3TR  WDYA  Web Dynpro Application
         DELETE FROM wdy_applicationt WHERE application_name = @iv_name.
