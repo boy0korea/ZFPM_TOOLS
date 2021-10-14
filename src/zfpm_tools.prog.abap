@@ -19,7 +19,8 @@ PARAMETERS: pa_wdca  TYPE wdy_config_appl-config_id MEMORY ID wdca MATCHCODE OBJ
             pa_wdca2 TYPE wdy_config_appl-config_id MATCHCODE OBJECT wd_conf_appl MODIF ID 2,
             pa_wclas TYPE flag MODIF ID 3,
             pa_file  TYPE string LOWER CASE MODIF ID 4,
-            pa_copym TYPE char1 AS LISTBOX VISIBLE LENGTH 10 MODIF ID 5.
+            pa_copym TYPE char1 AS LISTBOX VISIBLE LENGTH 10 MODIF ID 5,
+            pa_ow    TYPE char1 AS CHECKBOX MODIF ID 6.
 
 **********************************************************************
 INITIALIZATION.
@@ -113,7 +114,7 @@ FORM loop_screen.
       LOOP AT SCREEN.
         CHECK: screen-group1 IS NOT INITIAL.
         CASE screen-group1.
-          WHEN 4.
+          WHEN 4 OR 6.
             screen-active = 1.
           WHEN OTHERS.
             screen-active = 0.
@@ -1037,7 +1038,11 @@ FORM execute_import.
       WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
   ENDIF.
 
-  zcl_fpm_tools=>import_fpm_tree( iv_zip = lv_xstring ).
+  zcl_fpm_tools=>import_fpm_tree(
+    EXPORTING
+      iv_zip       = lv_xstring
+      iv_overwrite = pa_ow
+  ).
 ENDFORM.
 
 FORM execute_export.
