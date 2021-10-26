@@ -826,6 +826,7 @@ FORM execute_copy.
   READ TABLE lt_outtab INTO ls_outtab INDEX 1.
   DELETE lt_outtab INDEX 1.
   ls_fpm_name_map-config_id_copy = ls_outtab-config_id_copy.
+  ls_fpm_name_map-config_description_copy = ls_outtab-config_description_copy.
   IF ls_outtab-mode_copy EQ abap_true.
     ls_fpm_name_map-application_copy = ls_outtab-feeder_class_copy.
     ls_fpm_name_map-application_description_copy = ls_outtab-feeder_class_description_copy.
