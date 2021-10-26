@@ -74,10 +74,12 @@ public section.
   class-methods DELETE_FPM_TREE
     importing
       !IV_WDCA type WDY_CONFIG_ID
-      !IV_WITH_FEEDER_CLASS type FLAG optional .
+      !IV_WITH_FEEDER_CLASS type FLAG optional
+      !IV_NAME_SPACE type STRING optional .
   class-methods EXPORT_FPM_TREE
     importing
       !IV_WDCA type WDY_CONFIG_ID
+      !IV_NAME_SPACE type STRING optional
     returning
       value(RV_ZIP) type XSTRING .
   class-methods IMPORT_FPM_TREE
@@ -222,7 +224,51 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
     LOOP AT lt_uibb_info INTO ls_uibb_info.
       " delete uibb config
       ls_wdy_config_key-config_id = ls_uibb_info-config_id.
-      cl_wdr_configuration_utils=>delete_config_4_comp(
+      IF ls_wdy_config_key-config_id CP iv_name_space && '*'.
+        cl_wdr_configuration_utils=>delete_config_4_comp(
+          EXPORTING
+            p_config_key       = ls_wdy_config_key
+          EXCEPTIONS
+            action_cancelled   = 1            " Activity canceled
+            error_occurred     = 2            " Errors occurred
+            object_not_found   = 3            " Object not found
+            permission_failure = 4            " Authorization error
+            object_locked      = 5            " Object Locked
+            OTHERS             = 6
+        ).
+        IF sy-subrc <> 0.
+          MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+        ENDIF.
+      ENDIF.
+
+      " delete class
+      IF ls_uibb_info-feeder_class IS NOT INITIAL.
+        ls_clskey-clsname = ls_uibb_info-feeder_class.
+        IF ls_clskey-clsname CP iv_name_space && '*'.
+          CALL FUNCTION 'SEO_CLASS_DELETE_COMPLETE'
+            EXPORTING
+              clskey       = ls_clskey               " Class
+            EXCEPTIONS
+              not_existing = 1
+              is_interface = 2
+              db_error     = 3
+              no_access    = 4
+              other        = 5
+              OTHERS       = 6.
+          IF sy-subrc > 2.
+            MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
+
+    " delete FPM config
+    ls_wdy_config_key-config_id = iv_wdca.
+    ls_wdy_config_key-config_type = '02'.
+    IF ls_wdy_config_key-config_id CP iv_name_space && '*'.
+      cl_wdr_configuration_utils=>delete_config_4_appl(
         EXPORTING
           p_config_key       = ls_wdy_config_key
         EXCEPTIONS
@@ -237,62 +283,25 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
         MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
           WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
       ENDIF.
-
-      " delete class
-      IF ls_uibb_info-feeder_class IS NOT INITIAL.
-        ls_clskey-clsname = ls_uibb_info-feeder_class.
-        CALL FUNCTION 'SEO_CLASS_DELETE_COMPLETE'
-          EXPORTING
-            clskey       = ls_clskey               " Class
-          EXCEPTIONS
-            not_existing = 1
-            is_interface = 2
-            db_error     = 3
-            no_access    = 4
-            other        = 5
-            OTHERS       = 6.
-        IF sy-subrc > 2.
-          MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-        ENDIF.
-      ENDIF.
-    ENDLOOP.
-
-    " delete FPM config
-    ls_wdy_config_key-config_id = iv_wdca.
-    ls_wdy_config_key-config_type = '02'.
-    cl_wdr_configuration_utils=>delete_config_4_appl(
-      EXPORTING
-        p_config_key       = ls_wdy_config_key
-      EXCEPTIONS
-        action_cancelled   = 1            " Activity canceled
-        error_occurred     = 2            " Errors occurred
-        object_not_found   = 3            " Object not found
-        permission_failure = 4            " Authorization error
-        object_locked      = 5            " Object Locked
-        OTHERS             = 6
-    ).
-    IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
     ENDIF.
 
     " delete FPM appl.
-    SELECT SINGLE application
-      INTO lv_application
-      FROM wdy_config_appl
-      WHERE application = lv_application.
-    IF sy-subrc <> 0.
-      " if it has no config.
-      TRY.
-          cl_wdy_wb_application_util=>delete_application(
-            EXPORTING
-              name   = lv_application
-              corrnr = lv_corrnr
-          ).
-        CATCH cx_wdy_wb_appl_util_failure.
-      ENDTRY.
-
+    IF lv_application CP iv_name_space && '*'.
+      SELECT SINGLE application
+        INTO lv_application
+        FROM wdy_config_appl
+        WHERE application = lv_application.
+      IF sy-subrc <> 0.
+        " if it has no config.
+        TRY.
+            cl_wdy_wb_application_util=>delete_application(
+              EXPORTING
+                name   = lv_application
+                corrnr = lv_corrnr
+            ).
+          CATCH cx_wdy_wb_appl_util_failure.
+        ENDTRY.
+      ENDIF.
     ENDIF.
 
   ENDMETHOD.
@@ -341,6 +350,7 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
     IF lt_uibb_info IS NOT INITIAL.
       " save uibb config
       LOOP AT lt_uibb_info INTO ls_uibb_info.
+        CHECK: ls_uibb_info-config_id CP iv_name_space && '*'.
         SELECT SINGLE *
           INTO ls_wdy_config_data
           FROM wdy_config_data
@@ -485,47 +495,49 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
 
 
     " save FPM appl.
-    SELECT *
-      INTO TABLE lt_wdy_application
-      FROM wdy_application
-      WHERE application_name = lv_application.
-    SELECT *
-      INTO TABLE lt_wdy_applicationt
-      FROM wdy_applicationt
-      WHERE application_name = lv_application.
-    SELECT *
-      INTO TABLE lt_wdy_app_property
-      FROM wdy_app_property
-      WHERE application_name = lv_application.
+    IF lv_application CP iv_name_space && '*'.
+      SELECT *
+        INTO TABLE lt_wdy_application
+        FROM wdy_application
+        WHERE application_name = lv_application.
+      SELECT *
+        INTO TABLE lt_wdy_applicationt
+        FROM wdy_applicationt
+        WHERE application_name = lv_application.
+      SELECT *
+        INTO TABLE lt_wdy_app_property
+        FROM wdy_app_property
+        WHERE application_name = lv_application.
 
-    IF lt_wdy_application IS NOT INITIAL.
-      add_json_to_zip(
-        EXPORTING
-          it_data  = lt_wdy_application
-          iv_table = 'WDY_APPLICATION'
-          io_zip   = lo_zip
-      ).
-      CLEAR: lt_wdy_application.
-    ENDIF.
+      IF lt_wdy_application IS NOT INITIAL.
+        add_json_to_zip(
+          EXPORTING
+            it_data  = lt_wdy_application
+            iv_table = 'WDY_APPLICATION'
+            io_zip   = lo_zip
+        ).
+        CLEAR: lt_wdy_application.
+      ENDIF.
 
-    IF lt_wdy_applicationt IS NOT INITIAL.
-      add_json_to_zip(
-        EXPORTING
-          it_data  = lt_wdy_applicationt
-          iv_table = 'WDY_APPLICATIONT'
-          io_zip   = lo_zip
-      ).
-      CLEAR: lt_wdy_applicationt.
-    ENDIF.
+      IF lt_wdy_applicationt IS NOT INITIAL.
+        add_json_to_zip(
+          EXPORTING
+            it_data  = lt_wdy_applicationt
+            iv_table = 'WDY_APPLICATIONT'
+            io_zip   = lo_zip
+        ).
+        CLEAR: lt_wdy_applicationt.
+      ENDIF.
 
-    IF lt_wdy_app_property IS NOT INITIAL.
-      add_json_to_zip(
-        EXPORTING
-          it_data  = lt_wdy_app_property
-          iv_table = 'WDY_APP_PROPERTY'
-          io_zip   = lo_zip
-      ).
-      CLEAR: lt_wdy_app_property.
+      IF lt_wdy_app_property IS NOT INITIAL.
+        add_json_to_zip(
+          EXPORTING
+            it_data  = lt_wdy_app_property
+            iv_table = 'WDY_APP_PROPERTY'
+            io_zip   = lo_zip
+        ).
+        CLEAR: lt_wdy_app_property.
+      ENDIF.
     ENDIF.
 
 

@@ -20,7 +20,8 @@ PARAMETERS: pa_wdca  TYPE wdy_config_appl-config_id MEMORY ID wdca MATCHCODE OBJ
             pa_wclas TYPE flag MODIF ID 3,
             pa_file  TYPE string LOWER CASE MODIF ID 4,
             pa_copym TYPE char1 AS LISTBOX VISIBLE LENGTH 10 MODIF ID 5,
-            pa_ow    TYPE char1 AS CHECKBOX MODIF ID 6.
+            pa_ow    TYPE char1 AS CHECKBOX MODIF ID 6,
+            pa_ns    TYPE string LOWER CASE MODIF ID 7.
 
 **********************************************************************
 INITIALIZATION.
@@ -103,7 +104,7 @@ FORM loop_screen.
       LOOP AT SCREEN.
         CHECK: screen-group1 IS NOT INITIAL.
         CASE screen-group1.
-          WHEN 1 OR 3.
+          WHEN 1 OR 3 OR 7.
             screen-active = 1.
           WHEN OTHERS.
             screen-active = 0.
@@ -125,7 +126,7 @@ FORM loop_screen.
       LOOP AT SCREEN.
         CHECK: screen-group1 IS NOT INITIAL.
         CASE screen-group1.
-          WHEN 1.
+          WHEN 1 OR 7.
             screen-active = 1.
           WHEN OTHERS.
             screen-active = 0.
@@ -978,6 +979,7 @@ FORM execute_delete.
     EXPORTING
       iv_wdca              = pa_wdca
       iv_with_feeder_class = pa_wclas
+      iv_name_space        = pa_ns
   ).
 
 ENDFORM.
@@ -1085,8 +1087,13 @@ FORM execute_export.
   ENDIF.
   CHECK: lv_fullpath IS NOT INITIAL.
 
-  lv_xstring = zcl_fpm_tools=>export_fpm_tree( iv_wdca = pa_wdca ).
-
+  zcl_fpm_tools=>export_fpm_tree(
+    EXPORTING
+      iv_wdca       = pa_wdca
+      iv_name_space = pa_ns
+    RECEIVING
+      rv_zip        = lv_xstring
+  ).
 
 
   CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
