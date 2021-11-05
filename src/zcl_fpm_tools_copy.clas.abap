@@ -1,19 +1,19 @@
-class ZCL_FPM_TOOLS_COPY definition
-  public
-  create public .
+CLASS zcl_fpm_tools_copy DEFINITION
+  PUBLIC
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  types:
-    BEGIN OF ts_replace_rule,
+    TYPES:
+      BEGIN OF ts_replace_rule,
         ns_to    TYPE string,
         beg_from TYPE string,
         beg_to   TYPE string,
         end_from TYPE string,
         end_to   TYPE string,
       END OF ts_replace_rule .
-  types:
-    BEGIN OF ts_fpm_name_map,
+    TYPES:
+      BEGIN OF ts_fpm_name_map,
         application                  TYPE wdy_config_appl-application,
         config_id                    TYPE wdy_config_appl-config_id,
         application_copy             TYPE wdy_config_appl-application,
@@ -21,8 +21,8 @@ public section.
         application_description_copy TYPE wdy_md_description,
         config_description_copy      TYPE wdy_md_description,
       END OF ts_fpm_name_map .
-  types:
-    BEGIN OF ts_uibb_name_map,
+    TYPES:
+      BEGIN OF ts_uibb_name_map,
         config_id                     TYPE wdy_config_id,
         feeder_class                  TYPE fpmgb_feeder_class,
         config_id_copy                TYPE wdy_config_id,
@@ -31,50 +31,49 @@ public section.
         feeder_class_copy             TYPE fpmgb_feeder_class,
         feeder_class_description_copy TYPE wdy_md_description,
       END OF ts_uibb_name_map .
-  types:
-    tt_uibb_name_map TYPE TABLE OF ts_uibb_name_map .
+    TYPES:
+      tt_uibb_name_map TYPE TABLE OF ts_uibb_name_map .
 
-  class-methods EXECUTE
-    importing
-      !IV_FROM type WDY_CONFIG_ID
-      !IV_TO type WDY_CONFIG_ID
-      !IV_DEVCLASS type DEVCLASS optional
-      !IV_TRKORR type TRKORR optional .
-  class-methods GET_LCS
-    importing
-      !IV_X type CLIKE
-      !IV_Y type CLIKE
-    exporting
-      !EV_LENGTH type I
-      !EV_X_OFFSET type I
-      !EV_Y_OFFSET type I .
-  class-methods STEP1
-    importing
-      !IV_FROM type WDY_CONFIG_ID
-      !IV_TO type WDY_CONFIG_ID
-    exporting
-      !ES_FPM_NAME_MAP type TS_FPM_NAME_MAP
-      !ES_REPLACE_RULE type TS_REPLACE_RULE .
-  class-methods STEP2
-    importing
-      !IV_FROM type WDY_CONFIG_ID
-      !IS_REPLACE_RULE type TS_REPLACE_RULE
-      !IV_FEEDER_CLASS_COPY_MODE type CHAR1 default 'C'
-    exporting
-      !ET_UIBB_NAME_MAP type TT_UIBB_NAME_MAP .
-  class-methods STEP3
-    importing
-      !IS_FPM_NAME_MAP type TS_FPM_NAME_MAP
-      !IT_UIBB_NAME_MAP type TT_UIBB_NAME_MAP
-      !IV_DEVCLASS type DEVCLASS optional
-      !IV_TRKORR type TRKORR optional .
-  class-methods COPY_WDYA
-    importing
-      !IV_FROM type WDY_APPLICATION_NAME
-      !IV_TO type WDY_APPLICATION_NAME
-      !IV_DESCRIPTION type WDY_MD_DESCRIPTION optional
-      !IV_DEVCLASS type DEVCLASS
-      !IV_TRKORR type TRKORR .
+    CLASS-METHODS execute
+      IMPORTING
+        !iv_from     TYPE wdy_config_id
+        !iv_to       TYPE wdy_config_id
+        !iv_devclass TYPE devclass OPTIONAL
+        !iv_trkorr   TYPE trkorr OPTIONAL .
+    CLASS-METHODS get_lcs
+      IMPORTING
+        !iv_x        TYPE clike
+        !iv_y        TYPE clike
+      EXPORTING
+        !ev_length   TYPE i
+        !ev_x_offset TYPE i
+        !ev_y_offset TYPE i .
+    CLASS-METHODS step1
+      IMPORTING
+        !iv_from         TYPE wdy_config_id
+        !iv_to           TYPE wdy_config_id
+      EXPORTING
+        !es_fpm_name_map TYPE ts_fpm_name_map
+        !es_replace_rule TYPE ts_replace_rule .
+    CLASS-METHODS step2
+      IMPORTING
+        !iv_from                   TYPE wdy_config_id
+        !is_replace_rule           TYPE ts_replace_rule
+        !iv_feeder_class_copy_mode TYPE char1 DEFAULT 'C'
+      EXPORTING
+        !et_uibb_name_map          TYPE tt_uibb_name_map .
+    CLASS-METHODS step3
+      IMPORTING
+        !is_fpm_name_map  TYPE ts_fpm_name_map
+        !it_uibb_name_map TYPE tt_uibb_name_map
+        !iv_devclass      TYPE devclass OPTIONAL
+        !iv_trkorr        TYPE trkorr OPTIONAL .
+    CLASS-METHODS copy_wdya
+      IMPORTING
+        !iv_from     TYPE wdy_application_name
+        !iv_to       TYPE wdy_application_name
+        !iv_devclass TYPE devclass
+        !iv_trkorr   TYPE trkorr .
   PROTECTED SECTION.
   PRIVATE SECTION.
 
@@ -101,34 +100,10 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
   METHOD copy_wdya.
     DATA: lo_application     TYPE REF TO if_wdy_md_application,
           ls_wdy_application TYPE wdy_application,
-          lv_trkorr          TYPE trkorr,
-          ls_request         TYPE trwbo_request_header,
           lo_prop_iter       TYPE REF TO if_object_collection_iterator,
           lo_prop            TYPE REF TO if_wdy_md_application_property,
           lt_param           TYPE cl_wdy_wb_application_util=>ttyp_application_parameter,
           ls_param           TYPE cl_wdy_wb_application_util=>stru_application_parameter.
-
-    IF iv_trkorr IS NOT INITIAL.
-      lv_trkorr = iv_trkorr.
-      CALL FUNCTION 'TR_GET_REQUEST_OF_TASK'
-        EXPORTING
-          is_trkorr     = lv_trkorr
-*         iv_read_objs  = ' '
-*         iv_read_keys  = ' '
-*         iv_only_additional_objs = ' '
-        IMPORTING
-          es_request    = ls_request
-*         et_objects    = et_objects
-*         et_keys       = et_keys
-        EXCEPTIONS
-          invalid_input = 1
-          OTHERS        = 2.
-      IF sy-subrc <> 0.
-        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-      ENDIF.
-      lv_trkorr = ls_request-trkorr.
-    ENDIF.
 
     lo_application = cl_wdy_md_application=>get_object_by_key( iv_from ).
     lo_application->if_wdy_md_object~get_definition(
@@ -148,12 +123,12 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
     cl_wdy_wb_application_util=>create_application(
       EXPORTING
         name                 = iv_to                 " Web Dynpro: Application Name
-        description          = iv_description          " Web Dynpro: Short Description of an Object
+        description          = lo_application->if_wdy_md_object~get_description( )          " Web Dynpro: Short Description of an Object
         component_name       = ls_wdy_application-component       " Web Dynpro: Component Name
         interface_view_name  = ls_wdy_application-startup_view  " Web Dynpro : Name of Interface View
         startup_plug_name    = ls_wdy_application-startup_plug    " Web Dynpro : Name of Startup Plug
         devclass             = iv_devclass             " Package
-        corrnr               = lv_trkorr               " Request/Task
+        corrnr               = iv_trkorr               " Request/Task
         parameters           = lt_param           " Application Parameter
     ).
 
@@ -843,7 +818,6 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
         EXPORTING
           iv_from     = is_fpm_name_map-application
           iv_to       = is_fpm_name_map-application_copy
-          iv_description = is_fpm_name_map-application_description_copy
           iv_devclass = lv_devclass
           iv_trkorr   = lv_trkorr
       ).
@@ -852,6 +826,12 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
           iv_wdca = is_fpm_name_map-config_id_copy
           iv_appl = is_fpm_name_map-application_copy
       ).
+      zcl_fpm_tools=>set_description(
+         EXPORTING
+           iv_name        = is_fpm_name_map-application_copy
+           iv_typekind    = 'WDYA'
+           iv_description = is_fpm_name_map-application_description_copy
+       ).
     ENDIF.
 
 

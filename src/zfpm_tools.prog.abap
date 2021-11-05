@@ -1,4 +1,4 @@
-* ZFPM_TOOLS
+* https://github.com/boy0korea/ZFPM_TOOLS
 
 REPORT zfpm_tools.
 
@@ -19,9 +19,7 @@ PARAMETERS: pa_wdca  TYPE wdy_config_appl-config_id MEMORY ID wdca MATCHCODE OBJ
             pa_wdca2 TYPE wdy_config_appl-config_id MATCHCODE OBJECT wd_conf_appl MODIF ID 2,
             pa_wclas TYPE flag MODIF ID 3,
             pa_file  TYPE string LOWER CASE MODIF ID 4,
-            pa_copym TYPE char1 AS LISTBOX VISIBLE LENGTH 10 MODIF ID 5,
-            pa_ow    TYPE char1 AS CHECKBOX MODIF ID 6,
-            pa_ns    TYPE string LOWER CASE MODIF ID 7.
+            pa_copym TYPE char1 AS LISTBOX VISIBLE LENGTH 10 MODIF ID 5.
 
 **********************************************************************
 INITIALIZATION.
@@ -104,7 +102,7 @@ FORM loop_screen.
       LOOP AT SCREEN.
         CHECK: screen-group1 IS NOT INITIAL.
         CASE screen-group1.
-          WHEN 1 OR 3 OR 7.
+          WHEN 1 OR 3.
             screen-active = 1.
           WHEN OTHERS.
             screen-active = 0.
@@ -115,7 +113,7 @@ FORM loop_screen.
       LOOP AT SCREEN.
         CHECK: screen-group1 IS NOT INITIAL.
         CASE screen-group1.
-          WHEN 4 OR 6.
+          WHEN 4.
             screen-active = 1.
           WHEN OTHERS.
             screen-active = 0.
@@ -126,7 +124,7 @@ FORM loop_screen.
       LOOP AT SCREEN.
         CHECK: screen-group1 IS NOT INITIAL.
         CASE screen-group1.
-          WHEN 1 OR 7.
+          WHEN 1.
             screen-active = 1.
           WHEN OTHERS.
             screen-active = 0.
@@ -826,7 +824,6 @@ FORM execute_copy.
   READ TABLE lt_outtab INTO ls_outtab INDEX 1.
   DELETE lt_outtab INDEX 1.
   ls_fpm_name_map-config_id_copy = ls_outtab-config_id_copy.
-  ls_fpm_name_map-config_description_copy = ls_outtab-config_description_copy.
   IF ls_outtab-mode_copy EQ abap_true.
     ls_fpm_name_map-application_copy = ls_outtab-feeder_class_copy.
     ls_fpm_name_map-application_description_copy = ls_outtab-feeder_class_description_copy.
@@ -980,7 +977,6 @@ FORM execute_delete.
     EXPORTING
       iv_wdca              = pa_wdca
       iv_with_feeder_class = pa_wclas
-      iv_name_space        = pa_ns
   ).
 
 ENDFORM.
@@ -1041,11 +1037,7 @@ FORM execute_import.
       WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
   ENDIF.
 
-  zcl_fpm_tools=>import_fpm_tree(
-    EXPORTING
-      iv_zip       = lv_xstring
-      iv_overwrite = pa_ow
-  ).
+  zcl_fpm_tools=>import_fpm_tree( iv_zip = lv_xstring ).
 ENDFORM.
 
 FORM execute_export.
@@ -1088,13 +1080,8 @@ FORM execute_export.
   ENDIF.
   CHECK: lv_fullpath IS NOT INITIAL.
 
-  zcl_fpm_tools=>export_fpm_tree(
-    EXPORTING
-      iv_wdca       = pa_wdca
-      iv_name_space = pa_ns
-    RECEIVING
-      rv_zip        = lv_xstring
-  ).
+  lv_xstring = zcl_fpm_tools=>export_fpm_tree( iv_wdca = pa_wdca ).
+
 
 
   CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'

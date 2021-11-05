@@ -1,99 +1,94 @@
-class ZCL_FPM_TOOLS definition
-  public
-  create public .
+CLASS zcl_fpm_tools DEFINITION
+  PUBLIC
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  types:
-    BEGIN OF ts_uibb_info,
+    TYPES:
+      BEGIN OF ts_uibb_info,
         config_id                TYPE wdy_config_id,
         feeder_class             TYPE fpmgb_feeder_class,
         feeder_param             TYPE string,
         config_description       TYPE wdy_md_description,
         feeder_class_description TYPE wdy_md_description,
       END OF ts_uibb_info .
-  types:
-    tt_uibb_info TYPE TABLE OF ts_uibb_info .
+    TYPES:
+      tt_uibb_info TYPE TABLE OF ts_uibb_info .
 
-  class-methods GET_FPM_TREE
-    importing
-      !IV_WDCA type WDY_CONFIG_ID
-      !IV_READ_FEEDER_CLASS type FLAG optional
-      !IV_READ_FEEDER_PARAM type FLAG optional
-      !IV_READ_DESCRIPTION type FLAG optional
-    exporting
-      !ET_UIBB_INFO type TT_UIBB_INFO .
-  class-methods GET_FEEDER_CLASS
-    importing
-      !IV_CONFIG_ID type WDY_CONFIG_ID
-      !IV_READ_FEEDER_PARAM type FLAG default ABAP_TRUE
-    exporting
-      !EV_FEEDER_CLASS type SEOCLSNAME
-      !EV_FEEDER_PARAM type STRING .
-  class-methods SET_FEEDER_CLASS
-    importing
-      !IV_CONFIG_ID type WDY_CONFIG_ID
-      !IV_FEEDER_CLASS type SEOCLSNAME
-      !IV_FEEDER_PARAM type STRING optional
-      !IV_SET_FEEDER_PARAM type FLAG default ABAP_TRUE .
-  class-methods SUGGEST_OBJECT_NAME
-    importing
-      !IV_NAME type CLIKE
-      !IV_TYPEKIND type DDTYPEKIND optional
-      !IV_NEXT_NUMBER type FLAG optional
-    returning
-      value(RV_NAME) type STRING .
-  class-methods SET_APPLICATION
-    importing
-      !IV_WDCA type WDY_CONFIG_ID
-      !IV_APPL type WDY_APPLICATION_NAME .
-  class-methods GET_DESCRIPTION
-    importing
-      !IV_NAME type CLIKE
-      !IV_TYPEKIND type DDTYPEKIND
-    returning
-      value(RV_DESCRIPTION) type STRING .
-  class-methods SET_DESCRIPTION
-    importing
-      !IV_NAME type CLIKE
-      !IV_TYPEKIND type DDTYPEKIND
-      !IV_DESCRIPTION type CLIKE .
-  class-methods CORR_INSERT
-    importing
-      !IV_NAME type CLIKE
-      !IV_TYPEKIND type DDTYPEKIND
-    exporting
-      !EV_DEVCLASS type DEVCLASS
-      !EV_TRKORR type TRKORR .
-  class-methods CAN_INHERIT
-    importing
-      !IV_CLASS type SEOCLSNAME
-      !IV_MESSAGE type FLAG optional
-    returning
-      value(RV_CAN_INHERIT) type FLAG .
-  class-methods DELETE_FPM_TREE
-    importing
-      !IV_WDCA type WDY_CONFIG_ID
-      !IV_WITH_FEEDER_CLASS type FLAG optional
-      !IV_NAME_SPACE type STRING optional .
-  class-methods EXPORT_FPM_TREE
-    importing
-      !IV_WDCA type WDY_CONFIG_ID
-      !IV_NAME_SPACE type STRING optional
-    returning
-      value(RV_ZIP) type XSTRING .
-  class-methods IMPORT_FPM_TREE
-    importing
-      !IV_ZIP type XSTRING
-      !IV_OVERWRITE type FLAG optional .
-  class-methods SAVE_WDCC
-    importing
-      !IS_WDCC type WDY_CONFIG_DATA .
-  class-methods SAVE_WDCA
-    importing
-      !IS_WDCA type WDY_CONFIG_APPL .
+    CLASS-METHODS get_fpm_tree
+      IMPORTING
+        !iv_wdca              TYPE wdy_config_id
+        !iv_read_feeder_class TYPE flag OPTIONAL
+        !iv_read_feeder_param TYPE flag OPTIONAL
+        !iv_read_description  TYPE flag OPTIONAL
+      EXPORTING
+        !et_uibb_info         TYPE tt_uibb_info .
+    CLASS-METHODS get_feeder_class
+      IMPORTING
+        !iv_config_id         TYPE wdy_config_id
+        !iv_read_feeder_param TYPE flag DEFAULT abap_true
+      EXPORTING
+        !ev_feeder_class      TYPE seoclsname
+        !ev_feeder_param      TYPE string .
+    CLASS-METHODS set_feeder_class
+      IMPORTING
+        !iv_config_id        TYPE wdy_config_id
+        !iv_feeder_class     TYPE seoclsname
+        !iv_feeder_param     TYPE string OPTIONAL
+        !iv_set_feeder_param TYPE flag DEFAULT abap_true .
+    CLASS-METHODS suggest_object_name
+      IMPORTING
+        !iv_name        TYPE clike
+        !iv_typekind    TYPE ddtypekind OPTIONAL
+        !iv_next_number TYPE flag OPTIONAL
+      RETURNING
+        VALUE(rv_name)  TYPE string .
+    CLASS-METHODS set_application
+      IMPORTING
+        !iv_wdca TYPE wdy_config_id
+        !iv_appl TYPE wdy_application_name .
+    CLASS-METHODS get_description
+      IMPORTING
+        !iv_name              TYPE clike
+        !iv_typekind          TYPE ddtypekind
+      RETURNING
+        VALUE(rv_description) TYPE string .
+    CLASS-METHODS set_description
+      IMPORTING
+        !iv_name        TYPE clike
+        !iv_typekind    TYPE ddtypekind
+        !iv_description TYPE clike .
+    CLASS-METHODS corr_insert
+      IMPORTING
+        !iv_name     TYPE clike
+        !iv_typekind TYPE ddtypekind .
+    CLASS-METHODS can_inherit
+      IMPORTING
+        !iv_class             TYPE seoclsname
+        !iv_message           TYPE flag OPTIONAL
+      RETURNING
+        VALUE(rv_can_inherit) TYPE flag .
+    CLASS-METHODS delete_fpm_tree
+      IMPORTING
+        !iv_wdca              TYPE wdy_config_id
+        !iv_with_feeder_class TYPE flag OPTIONAL .
+    CLASS-METHODS export_fpm_tree
+      IMPORTING
+        !iv_wdca      TYPE wdy_config_id
+      RETURNING
+        VALUE(rv_zip) TYPE xstring .
+    CLASS-METHODS import_fpm_tree
+      IMPORTING
+        !iv_zip TYPE xstring .
+    CLASS-METHODS save_wdcc
+      IMPORTING
+        !is_wdcc TYPE wdy_config_data .
+    CLASS-METHODS save_wdca
+      IMPORTING
+        !is_wdca TYPE wdy_config_appl .
   PROTECTED SECTION.
 
+    CLASS-METHODS readme .
     CLASS-METHODS add_json_to_zip
       IMPORTING
         !it_data  TYPE data
@@ -144,6 +139,67 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD can_inherit.
+    DATA:
+      superclskey TYPE seoclskey,
+      superclass  TYPE vseoclass.
+
+    superclskey-clsname = iv_class.
+
+* check superclass existence
+    CALL FUNCTION 'SEO_CLASS_GET'
+      EXPORTING
+        clskey       = superclskey
+        version      = seoc_version_inactive
+        state        = '0'
+      IMPORTING
+*       SUPERCLASS   =
+        class        = superclass
+      EXCEPTIONS
+        not_existing = 1
+        deleted      = 2
+        is_interface = 3
+        model_only   = 4
+        OTHERS       = 5.
+    IF sy-subrc <> 0.
+      IF iv_message EQ abap_true.
+        MESSAGE ID sy-msgid TYPE 'E' NUMBER sy-msgno
+          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+      RETURN.
+    ENDIF.
+
+* check superclass is final
+    IF superclass-clsfinal = seox_true.
+      IF iv_message EQ abap_true.
+        MESSAGE e109(oo)
+          WITH superclskey-clsname.
+      ENDIF.
+      RETURN.
+    ENDIF.
+
+    CASE superclass-category.
+      WHEN seoc_category_persistent.
+        IF iv_message EQ abap_true.
+          MESSAGE e626(oo).
+        ENDIF.
+        RETURN.
+      WHEN seoc_category_p_agent.
+        IF iv_message EQ abap_true.
+          MESSAGE e630(oo) WITH superclass-clsname.
+        ENDIF.
+        RETURN.
+      WHEN seoc_category_exception.
+        IF iv_message EQ abap_true.
+          MESSAGE e192(oo).
+        ENDIF.
+        RETURN.
+    ENDCASE.
+
+    rv_can_inherit = abap_true.
+  ENDMETHOD.
+
+
   METHOD corr_insert.
     DATA: ls_wdy_config_key TYPE wdy_config_key.
     FIELD-SYMBOLS: <lv_object> TYPE data.
@@ -152,21 +208,16 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
 
     CASE iv_typekind.
       WHEN 'WDCA'.    " R3TR  WDCA  Web Dynpro Application Configuration
-        IF cl_abap_datadescr=>get_data_type_kind( iv_name ) EQ cl_abap_datadescr=>typekind_struct1.
-          MOVE-CORRESPONDING iv_name TO ls_wdy_config_key.
-        ELSE.
-          ls_wdy_config_key-config_id = iv_name.
-          ls_wdy_config_key-config_type = '02'.
-        ENDIF.
+        ls_wdy_config_key-config_id = iv_name.
+        ls_wdy_config_key-config_type = '02'.
         ASSIGN ls_wdy_config_key TO <lv_object>.
       WHEN 'WDCC'.    " R3TR  WDCC  Web Dynpro Component Configuration
-        IF cl_abap_datadescr=>get_data_type_kind( iv_name ) EQ cl_abap_datadescr=>typekind_struct1.
-          MOVE-CORRESPONDING iv_name TO ls_wdy_config_key.
-        ELSE.
-          ls_wdy_config_key-config_id = iv_name.
-          ls_wdy_config_key-config_type = '00'.
-        ENDIF.
+        ls_wdy_config_key-config_id = iv_name.
+        ls_wdy_config_key-config_type = '00'.
         ASSIGN ls_wdy_config_key TO <lv_object>.
+*      WHEN 'WDYA'.    " R3TR  WDYA  Web Dynpro Application
+*      WHEN 'WDYN'.    " R3TR  WDYN  Web Dynpro Component
+*      WHEN 'CLAS'.    " R3TR  CLAS  Class (ABAP Objects)
       WHEN OTHERS.
         ASSIGN iv_name TO <lv_object>.
     ENDCASE.
@@ -177,9 +228,6 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
         object_class        = iv_typekind
 *       mode                = 'I'          " I(nsert), if object new
         global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
-      IMPORTING
-        devclass            = ev_devclass       " Package
-        korrnum             = ev_trkorr        " Correction number
       EXCEPTIONS
         cancelled           = 1              " Processing cancelled
         permission_failure  = 2              " No correction entry possible
@@ -224,51 +272,7 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
     LOOP AT lt_uibb_info INTO ls_uibb_info.
       " delete uibb config
       ls_wdy_config_key-config_id = ls_uibb_info-config_id.
-      IF ls_wdy_config_key-config_id CP iv_name_space && '*'.
-        cl_wdr_configuration_utils=>delete_config_4_comp(
-          EXPORTING
-            p_config_key       = ls_wdy_config_key
-          EXCEPTIONS
-            action_cancelled   = 1            " Activity canceled
-            error_occurred     = 2            " Errors occurred
-            object_not_found   = 3            " Object not found
-            permission_failure = 4            " Authorization error
-            object_locked      = 5            " Object Locked
-            OTHERS             = 6
-        ).
-        IF sy-subrc <> 0.
-          MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-        ENDIF.
-      ENDIF.
-
-      " delete class
-      IF ls_uibb_info-feeder_class IS NOT INITIAL.
-        ls_clskey-clsname = ls_uibb_info-feeder_class.
-        IF ls_clskey-clsname CP iv_name_space && '*'.
-          CALL FUNCTION 'SEO_CLASS_DELETE_COMPLETE'
-            EXPORTING
-              clskey       = ls_clskey               " Class
-            EXCEPTIONS
-              not_existing = 1
-              is_interface = 2
-              db_error     = 3
-              no_access    = 4
-              other        = 5
-              OTHERS       = 6.
-          IF sy-subrc > 2.
-            MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-          ENDIF.
-        ENDIF.
-      ENDIF.
-    ENDLOOP.
-
-    " delete FPM config
-    ls_wdy_config_key-config_id = iv_wdca.
-    ls_wdy_config_key-config_type = '02'.
-    IF ls_wdy_config_key-config_id CP iv_name_space && '*'.
-      cl_wdr_configuration_utils=>delete_config_4_appl(
+      cl_wdr_configuration_utils=>delete_config_4_comp(
         EXPORTING
           p_config_key       = ls_wdy_config_key
         EXCEPTIONS
@@ -283,25 +287,62 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
         MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
           WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
       ENDIF.
+
+      " delete class
+      IF ls_uibb_info-feeder_class IS NOT INITIAL.
+        ls_clskey-clsname = ls_uibb_info-feeder_class.
+        CALL FUNCTION 'SEO_CLASS_DELETE_COMPLETE'
+          EXPORTING
+            clskey       = ls_clskey               " Class
+          EXCEPTIONS
+            not_existing = 1
+            is_interface = 2
+            db_error     = 3
+            no_access    = 4
+            other        = 5
+            OTHERS       = 6.
+        IF sy-subrc > 2.
+          MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
+
+    " delete FPM config
+    ls_wdy_config_key-config_id = iv_wdca.
+    ls_wdy_config_key-config_type = '02'.
+    cl_wdr_configuration_utils=>delete_config_4_appl(
+      EXPORTING
+        p_config_key       = ls_wdy_config_key
+      EXCEPTIONS
+        action_cancelled   = 1            " Activity canceled
+        error_occurred     = 2            " Errors occurred
+        object_not_found   = 3            " Object not found
+        permission_failure = 4            " Authorization error
+        object_locked      = 5            " Object Locked
+        OTHERS             = 6
+    ).
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
     ENDIF.
 
     " delete FPM appl.
-    IF lv_application CP iv_name_space && '*'.
-      SELECT SINGLE application
-        INTO lv_application
-        FROM wdy_config_appl
-        WHERE application = lv_application.
-      IF sy-subrc <> 0.
-        " if it has no config.
-        TRY.
-            cl_wdy_wb_application_util=>delete_application(
-              EXPORTING
-                name   = lv_application
-                corrnr = lv_corrnr
-            ).
-          CATCH cx_wdy_wb_appl_util_failure.
-        ENDTRY.
-      ENDIF.
+    SELECT SINGLE application
+      INTO lv_application
+      FROM wdy_config_appl
+      WHERE application = lv_application.
+    IF sy-subrc <> 0.
+      " if it has no config.
+      TRY.
+          cl_wdy_wb_application_util=>delete_application(
+            EXPORTING
+              name   = lv_application
+              corrnr = lv_corrnr
+          ).
+        CATCH cx_wdy_wb_appl_util_failure.
+      ENDTRY.
+
     ENDIF.
 
   ENDMETHOD.
@@ -350,7 +391,6 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
     IF lt_uibb_info IS NOT INITIAL.
       " save uibb config
       LOOP AT lt_uibb_info INTO ls_uibb_info.
-        CHECK: ls_uibb_info-config_id CP iv_name_space && '*'.
         SELECT SINGLE *
           INTO ls_wdy_config_data
           FROM wdy_config_data
@@ -495,49 +535,47 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
 
 
     " save FPM appl.
-    IF lv_application CP iv_name_space && '*'.
-      SELECT *
-        INTO TABLE lt_wdy_application
-        FROM wdy_application
-        WHERE application_name = lv_application.
-      SELECT *
-        INTO TABLE lt_wdy_applicationt
-        FROM wdy_applicationt
-        WHERE application_name = lv_application.
-      SELECT *
-        INTO TABLE lt_wdy_app_property
-        FROM wdy_app_property
-        WHERE application_name = lv_application.
+    SELECT *
+      INTO TABLE lt_wdy_application
+      FROM wdy_application
+      WHERE application_name = lv_application.
+    SELECT *
+      INTO TABLE lt_wdy_applicationt
+      FROM wdy_applicationt
+      WHERE application_name = lv_application.
+    SELECT *
+      INTO TABLE lt_wdy_app_property
+      FROM wdy_app_property
+      WHERE application_name = lv_application.
 
-      IF lt_wdy_application IS NOT INITIAL.
-        add_json_to_zip(
-          EXPORTING
-            it_data  = lt_wdy_application
-            iv_table = 'WDY_APPLICATION'
-            io_zip   = lo_zip
-        ).
-        CLEAR: lt_wdy_application.
-      ENDIF.
+    IF lt_wdy_application IS NOT INITIAL.
+      add_json_to_zip(
+        EXPORTING
+          it_data  = lt_wdy_application
+          iv_table = 'WDY_APPLICATION'
+          io_zip   = lo_zip
+      ).
+      CLEAR: lt_wdy_application.
+    ENDIF.
 
-      IF lt_wdy_applicationt IS NOT INITIAL.
-        add_json_to_zip(
-          EXPORTING
-            it_data  = lt_wdy_applicationt
-            iv_table = 'WDY_APPLICATIONT'
-            io_zip   = lo_zip
-        ).
-        CLEAR: lt_wdy_applicationt.
-      ENDIF.
+    IF lt_wdy_applicationt IS NOT INITIAL.
+      add_json_to_zip(
+        EXPORTING
+          it_data  = lt_wdy_applicationt
+          iv_table = 'WDY_APPLICATIONT'
+          io_zip   = lo_zip
+      ).
+      CLEAR: lt_wdy_applicationt.
+    ENDIF.
 
-      IF lt_wdy_app_property IS NOT INITIAL.
-        add_json_to_zip(
-          EXPORTING
-            it_data  = lt_wdy_app_property
-            iv_table = 'WDY_APP_PROPERTY'
-            io_zip   = lo_zip
-        ).
-        CLEAR: lt_wdy_app_property.
-      ENDIF.
+    IF lt_wdy_app_property IS NOT INITIAL.
+      add_json_to_zip(
+        EXPORTING
+          it_data  = lt_wdy_app_property
+          iv_table = 'WDY_APP_PROPERTY'
+          io_zip   = lo_zip
+      ).
+      CLEAR: lt_wdy_app_property.
     ENDIF.
 
 
@@ -787,9 +825,6 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
           ls_wdy_config_key   TYPE wdy_config_key,
           lv_devclass	        TYPE devclass,
           lv_trkorr	          TYPE trkorr,
-          lv_korrnum          TYPE tadir-korrnum,
-          lt_tadir            TYPE TABLE OF tadir,
-          ls_tadir            TYPE tadir,
           lv_json             TYPE string,
           lv_xstring          TYPE xstring,
           ls_file             TYPE cl_abap_zip=>t_file,
@@ -801,9 +836,7 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
                    <ls_wdy_config_appl> TYPE wdy_config_appl,
                    <ls_wdy_application> TYPE wdy_application.
 
-**********************************************************************
-* read ZIP
-**********************************************************************
+
     CREATE OBJECT lo_zip.
     lo_zip->load(
       EXPORTING
@@ -844,197 +877,57 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
       ).
     ENDLOOP.
 
-*cl_wdr_configuration_utils=>delete_config_4_appl
 
-**********************************************************************
-* overwrite
-**********************************************************************
-    LOOP AT lt_wdy_config_appl ASSIGNING <ls_wdy_config_appl>.
-      SELECT SINGLE config_id
-        INTO ls_wdy_config_key-config_id
-        FROM wdy_config_appl
-        WHERE config_id = <ls_wdy_config_appl>-config_id
-          AND config_type = <ls_wdy_config_appl>-config_type
-          AND config_var = <ls_wdy_config_appl>-config_var.
-      IF sy-subrc EQ 0.
-        IF iv_overwrite EQ abap_false.
-          MESSAGE <ls_wdy_config_appl>-config_id && ` exists.` TYPE 'E'.
-        ELSE.
-          MOVE-CORRESPONDING <ls_wdy_config_appl> TO ls_wdy_config_key.
-          cl_wdr_configuration_utils=>delete_config_4_appl(
-            EXPORTING
-              p_config_key       = ls_wdy_config_key
-            EXCEPTIONS
-              action_cancelled   = 1            " Activity canceled
-              error_occurred     = 2            " Errors occurred
-              object_not_found   = 3            " Object not found
-              permission_failure = 4            " Authorization error
-              object_locked      = 5            " Object Locked
-              OTHERS             = 6
-          ).
-          IF sy-subrc <> 0.
-            MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-          ENDIF.
-        ENDIF.
-      ENDIF.
-    ENDLOOP.
-    LOOP AT lt_wdy_config_data ASSIGNING <ls_wdy_config_data>.
-      SELECT SINGLE config_id
-        INTO ls_wdy_config_key-config_id
-        FROM wdy_config_data
-        WHERE config_id = <ls_wdy_config_data>-config_id
-          AND config_type = <ls_wdy_config_data>-config_type
-          AND config_var = <ls_wdy_config_data>-config_var.
-      IF sy-subrc EQ 0.
-        IF iv_overwrite EQ abap_false.
-          MESSAGE <ls_wdy_config_data>-config_id && ` exists.` TYPE 'E'.
-        ELSE.
-          MOVE-CORRESPONDING <ls_wdy_config_data> TO ls_wdy_config_key.
-          cl_wdr_configuration_utils=>delete_config_4_comp(
-            EXPORTING
-              p_config_key       = ls_wdy_config_key
-            EXCEPTIONS
-              action_cancelled   = 1            " Activity canceled
-              error_occurred     = 2            " Errors occurred
-              object_not_found   = 3            " Object not found
-              permission_failure = 4            " Authorization error
-              object_locked      = 5            " Object Locked
-              OTHERS             = 6
-          ).
-          IF sy-subrc <> 0.
-            MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-          ENDIF.
-        ENDIF.
-      ENDIF.
-    ENDLOOP.
-    LOOP AT lt_wdy_application ASSIGNING <ls_wdy_application>.
-      SELECT SINGLE application_name
-        INTO lv_application
-        FROM wdy_application
-        WHERE application_name = <ls_wdy_application>-application_name.
-      IF sy-subrc EQ 0.
-        " application exist. OK.
-        DELETE lt_wdy_application.
-      ENDIF.
-    ENDLOOP.
-
-
-**********************************************************************
-* TADIR
-**********************************************************************
-    LOOP AT lt_wdy_config_appl ASSIGNING <ls_wdy_config_appl>.
-      MOVE-CORRESPONDING <ls_wdy_config_appl> TO ls_wdy_config_key.
-      ls_tadir-object = 'WDCA'.
-      ls_tadir-obj_name = ls_wdy_config_key.
-      APPEND ls_tadir TO lt_tadir.
-    ENDLOOP.
-    LOOP AT lt_wdy_config_data ASSIGNING <ls_wdy_config_data>.
-      MOVE-CORRESPONDING <ls_wdy_config_data> TO ls_wdy_config_key.
-      ls_tadir-object = 'WDCC'.
-      ls_tadir-obj_name = ls_wdy_config_key.
-      APPEND ls_tadir TO lt_tadir.
-    ENDLOOP.
-    LOOP AT lt_wdy_application ASSIGNING <ls_wdy_application>.
-      ls_tadir-object = 'WDYA'.
-      ls_tadir-obj_name = <ls_wdy_application>-application_name.
-      APPEND ls_tadir TO lt_tadir.
-    ENDLOOP.
-
-    LOOP AT lt_tadir INTO ls_tadir.
-      IF sy-tabix EQ 1.
-        CALL FUNCTION 'RS_ACCESS_PERMISSION'
-          EXPORTING
-            authority_check          = 'X'                   " Check authorization ('X'->yes, ' '->no)  CHAR 1
-            global_lock              = 'X'                   " Great corr. lock (R3TR); space:LIMU-Sp.  CHAR 1
-            master_language          = sy-langu                 " Maintenance language of overall object
-            mode                     = 'INSERT'              " Mode ('INSERT','MODIFY','SHOW','FREE')   CHAR 6
-            object                   = ls_tadir-obj_name                " Object (complete lock key)               CHAR 40
-            object_class             = ls_tadir-object          " Obj. clss (ABAP,SCUA,SCRP,SLDB,T100... ) CHAR 4
-          EXCEPTIONS
-            canceled_in_corr         = 1                     " User canceled correction system dialog box (F12
-            enqueued_by_user         = 2                     " Object locked by other user
-            enqueue_system_failure   = 3                     " Internal error in ENQUEUE function module
-            illegal_parameter_values = 4                     " Invalid value for MODE or OBJECT_CLASS
-            locked_by_author         = 5                     " Editor lock is set (only for SE38)
-            no_modify_permission     = 6                     " User has no change authorization
-            no_show_permission       = 7                     " User has no display authorization
-            permission_failure       = 8                     " General exception: Required access denied
-            request_language_denied  = 9                     " Unpermitted request language
-            OTHERS                   = 10.
-        IF sy-subrc <> 0.
-          MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-        ENDIF.
-        CALL FUNCTION 'RS_CORR_INSERT'
-          EXPORTING
-            object              = ls_tadir-obj_name         " Object name
-            object_class        = ls_tadir-object   " Object class (ABAP,SCUA,SCRP,DICT,FUNC.)
-            mode                = 'I'          " I(nsert), if object new
-            global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
-          IMPORTING
-            devclass            = lv_devclass       " Package
-            korrnum             = lv_trkorr        " Correction number
-          EXCEPTIONS
-            cancelled           = 1              " Processing cancelled
-            permission_failure  = 2              " No correction entry possible
-            unknown_objectclass = 3              " Object class not recognised
-            OTHERS              = 4.
-        IF sy-subrc <> 0.
-          MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-        ENDIF.
-        lv_korrnum = lv_trkorr.
-      ELSE.
-        CALL FUNCTION 'TR_TADIR_INTERFACE'
-          EXPORTING
-            wi_test_modus                  = ' '               " X - simulation mode (no update)
-            wi_tadir_pgmid                 = 'R3TR'    " Input for TADIR field PGMID
-            wi_tadir_object                = ls_tadir-object   " Input for TADIR field OBJECT
-            wi_tadir_obj_name              = ls_tadir-obj_name " Input for TADIR field OBJ_NAME
-            wi_tadir_korrnum               = lv_korrnum               " Transport Organizer internal
-            wi_tadir_devclass              = lv_devclass               " Input for TADIR field DEVCLASS
-          EXCEPTIONS
-            tadir_entry_not_existing       = 1                 " Object directory entry does not exist
-            tadir_entry_ill_type           = 2                 " Transferred TADIR key not compatible with E071
-            no_systemname                  = 3                 " System name not found
-            no_systemtype                  = 4                 " System type not defined
-            original_system_conflict       = 5                 " Object already exists in another system
-            object_reserved_for_devclass   = 6                 " Object reserved for name range
-            object_exists_global           = 7                 " Object exists globally
-            object_exists_local            = 8                 " Object exists locally
-            object_is_distributed          = 9                 " Object is distributed
-            obj_specification_not_unique   = 10                " Object specification for import is not sufficient
-            no_authorization_to_delete     = 11                " No permission to delete
-            devclass_not_existing          = 12                " Package unknown
-            simultanious_set_remove_repair = 13                " Repair flag set/reset simultaneously
-            order_missing                  = 14                " Repair request was not transferred
-            no_modification_of_head_syst   = 15                " Modification of HEAD-SYST entry not allowed
-            pgmid_object_not_allowed       = 16                " PGMID entry not permitted
-            masterlanguage_not_specified   = 17                " Master language not specified
-            devclass_not_specified         = 18                " Package not specified
-            specify_owner_unique           = 19
-            loc_priv_objs_no_repair        = 20                " No repair to local-private objects
-            gtadir_not_reached             = 21                " The GTADIR cannot be accessed
-            object_locked_for_order        = 22
-            change_of_class_not_allowed    = 23
-            no_change_from_sap_to_tmp      = 24                " Do not switch SAP objects to customer development class
-            OTHERS                         = 25.
-        IF sy-subrc <> 0.
-          MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-        ENDIF.
-      ENDIF.
-    ENDLOOP.
-
-
-
-**********************************************************************
-* save
-**********************************************************************
     " save FPM config
     LOOP AT lt_wdy_config_appl ASSIGNING <ls_wdy_config_appl>.
+      MOVE-CORRESPONDING <ls_wdy_config_appl> TO ls_wdy_config_key.
+      CALL FUNCTION 'RS_ACCESS_PERMISSION'
+        EXPORTING
+          authority_check          = 'X'                   " Check authorization ('X'->yes, ' '->no)  CHAR 1
+          global_lock              = 'X'                   " Great corr. lock (R3TR); space:LIMU-Sp.  CHAR 1
+          master_language          = sy-langu                 " Maintenance language of overall object
+          mode                     = 'MODIFY'              " Mode ('INSERT','MODIFY','SHOW','FREE')   CHAR 6
+          object                   = ls_wdy_config_key                " Object (complete lock key)               CHAR 40
+          object_class             = 'WDCA'          " Obj. clss (ABAP,SCUA,SCRP,SLDB,T100... ) CHAR 4
+        IMPORTING
+          devclass                 = lv_devclass              " Development class
+          korrnum                  = lv_trkorr               " Correction number (only with 'INSERT','MODIFY')
+        EXCEPTIONS
+          canceled_in_corr         = 1                     " User canceled correction system dialog box (F12
+          enqueued_by_user         = 2                     " Object locked by other user
+          enqueue_system_failure   = 3                     " Internal error in ENQUEUE function module
+          illegal_parameter_values = 4                     " Invalid value for MODE or OBJECT_CLASS
+          locked_by_author         = 5                     " Editor lock is set (only for SE38)
+          no_modify_permission     = 6                     " User has no change authorization
+          no_show_permission       = 7                     " User has no display authorization
+          permission_failure       = 8                     " General exception: Required access denied
+          request_language_denied  = 9                     " Unpermitted request language
+          OTHERS                   = 10.
+      IF sy-subrc <> 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+      CALL FUNCTION 'RS_CORR_INSERT'
+        EXPORTING
+          object              = ls_wdy_config_key         " Object name
+          object_class        = 'WDCA'   " Object class (ABAP,SCUA,SCRP,DICT,FUNC.)
+          global_lock         = abap_true          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
+          devclass            = lv_devclass          " Package
+          korrnum             = lv_trkorr          " Correction number
+          activation_call     = abap_true
+        IMPORTING
+          devclass            = lv_devclass       " Package
+          korrnum             = lv_trkorr        " Correction number
+        EXCEPTIONS
+          cancelled           = 1              " Processing cancelled
+          permission_failure  = 2              " No correction entry possible
+          unknown_objectclass = 3              " Object class not recognised
+          OTHERS              = 4.
+      IF sy-subrc <> 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+
       lo_zip->get(
         EXPORTING
           name                    = get_wdca_xml_filename( <ls_wdy_config_appl>-config_id )
@@ -1054,6 +947,28 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
 
     " save uibb config
     LOOP AT lt_wdy_config_data ASSIGNING <ls_wdy_config_data>.
+      MOVE-CORRESPONDING <ls_wdy_config_data> TO ls_wdy_config_key.
+      CALL FUNCTION 'RS_CORR_INSERT'
+        EXPORTING
+          object              = ls_wdy_config_key         " Object name
+          object_class        = 'WDCC'   " Object class (ABAP,SCUA,SCRP,DICT,FUNC.)
+          global_lock         = abap_true          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
+          devclass            = lv_devclass          " Package
+          korrnum             = lv_trkorr          " Correction number
+          activation_call     = abap_true
+        IMPORTING
+          devclass            = lv_devclass       " Package
+          korrnum             = lv_trkorr        " Correction number
+        EXCEPTIONS
+          cancelled           = 1              " Processing cancelled
+          permission_failure  = 2              " No correction entry possible
+          unknown_objectclass = 3              " Object class not recognised
+          OTHERS              = 4.
+      IF sy-subrc <> 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+
       lo_zip->get(
         EXPORTING
           name                    = get_wdcc_xml_filename( <ls_wdy_config_data>-config_id )
@@ -1074,6 +989,26 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
 
     " save FPM appl.
     LOOP AT lt_wdy_application ASSIGNING <ls_wdy_application>.
+      CALL FUNCTION 'RS_CORR_INSERT'
+        EXPORTING
+          object              = <ls_wdy_application>-application_name         " Object name
+          object_class        = 'WDYA'   " Object class (ABAP,SCUA,SCRP,DICT,FUNC.)
+          global_lock         = abap_true          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
+          devclass            = lv_devclass          " Package
+          korrnum             = lv_trkorr          " Correction number
+          activation_call     = abap_true
+        IMPORTING
+          devclass            = lv_devclass       " Package
+          korrnum             = lv_trkorr        " Correction number
+        EXCEPTIONS
+          cancelled           = 1              " Processing cancelled
+          permission_failure  = 2              " No correction entry possible
+          unknown_objectclass = 3              " Object class not recognised
+          OTHERS              = 4.
+      IF sy-subrc <> 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
 
       IF cl_wdy_md_application=>check_existency( <ls_wdy_application>-application_name ) EQ abap_true.
         cl_wdy_md_application=>delete_sicf(
@@ -1192,6 +1127,113 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD readme.
+* https://github.com/boy0korea/ZFPM_TOOLS
+  ENDMETHOD.
+
+
+  METHOD save_wdca.
+    DATA: ls_wdy_config_key TYPE wdy_config_key,
+          lo_translator	    TYPE REF TO if_wdr_config_otr,
+          lv_devclass	      TYPE devclass,
+          lv_trkorr	        TYPE trkorr.
+
+
+    ls_wdy_config_key-config_id = is_wdca-config_id.
+    ls_wdy_config_key-config_type = is_wdca-config_type.
+    ls_wdy_config_key-config_var = is_wdca-config_var.
+
+    CALL FUNCTION 'RS_CORR_INSERT'
+      EXPORTING
+        object              = ls_wdy_config_key         " Object name
+        object_class        = 'WDCA'
+        global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
+      IMPORTING
+        devclass            = lv_devclass
+        korrnum             = lv_trkorr
+      EXCEPTIONS
+        cancelled           = 1              " Processing cancelled
+        permission_failure  = 2              " No correction entry possible
+        unknown_objectclass = 3              " Object class not recognised
+        OTHERS              = 4.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+
+
+    MODIFY wdy_config_appl CONNECTION (if_wdr_cfg_constants=>c_db_con_name) FROM is_wdca.
+    COMMIT CONNECTION (if_wdr_cfg_constants=>c_db_con_name).
+
+
+    cl_wdr_cfg_persistence_utils=>config_changed(
+      EXPORTING
+        action              = if_wd_cfg_badi_changes=>co_action_modify
+        config_key          = ls_wdy_config_key          " Key Components of Configuration Tables
+        devclass            = lv_devclass            " Package
+        environment         = if_wd_cfg_badi_changes=>co_env_gui
+        is_component        = abap_false
+        object_name         = is_wdca-application         " Web Dynpro: Component Name
+        pers_scope          = if_wd_personalization=>co_scope_config          " Web Dynpro: Personalization Range
+        transport           = lv_trkorr           " Request/Task
+    ).
+
+
+  ENDMETHOD.
+
+
+  METHOD save_wdcc.
+    DATA: ls_wdy_config_key TYPE wdy_config_key,
+          lo_translator	    TYPE REF TO if_wdr_config_otr,
+          lv_devclass	      TYPE devclass,
+          lv_trkorr	        TYPE trkorr.
+
+
+    ls_wdy_config_key-config_id = is_wdcc-config_id.
+    ls_wdy_config_key-config_type = is_wdcc-config_type.
+    ls_wdy_config_key-config_var = is_wdcc-config_var.
+
+    CALL FUNCTION 'RS_CORR_INSERT'
+      EXPORTING
+        object              = ls_wdy_config_key         " Object name
+        object_class        = 'WDCC'
+        global_lock         = 'X'          " SPACE: small block (LIMU); 'x': g. bl. (R3TR)
+      IMPORTING
+        devclass            = lv_devclass
+        korrnum             = lv_trkorr
+      EXCEPTIONS
+        cancelled           = 1              " Processing cancelled
+        permission_failure  = 2              " No correction entry possible
+        unknown_objectclass = 3              " Object class not recognised
+        OTHERS              = 4.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+
+
+    cl_wdr_cfg_persistence_utils=>save_comp_config_to_db(
+      EXPORTING
+        config_data = is_wdcc
+        translator  = lo_translator
+    ).
+
+    cl_wdr_cfg_persistence_utils=>config_changed(
+      EXPORTING
+        action              = if_wd_cfg_badi_changes=>co_action_modify
+        config_key          = ls_wdy_config_key          " Key Components of Configuration Tables
+        devclass            = lv_devclass            " Package
+        environment         = if_wd_cfg_badi_changes=>co_env_gui
+        is_component        = abap_true
+        object_name         = is_wdcc-component         " Web Dynpro: Component Name
+        pers_scope          = if_wd_personalization=>co_scope_config          " Web Dynpro: Personalization Range
+        transport           = lv_trkorr           " Request/Task
+    ).
+  ENDMETHOD.
+
+
   METHOD set_application.
     DATA: ls_wdca   TYPE wdy_config_appl,
           lv_string TYPE string.
@@ -1225,20 +1267,30 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
 
     CASE iv_typekind.
       WHEN 'WDCA'.    " R3TR  WDCA  Web Dynpro Application Configuration
-        DELETE FROM wdy_config_appt WHERE config_id = @iv_name AND config_type = '02' AND config_var = ''.
-        MODIFY wdy_config_appt FROM @( VALUE #( config_id = iv_name config_type = '02' langu = sy-langu description = iv_description ) ).
+        DELETE FROM wdy_config_appt WHERE config_id = @iv_name.
+        IF iv_description IS NOT INITIAL.
+          MODIFY wdy_config_appt FROM @( VALUE #( config_id = iv_name config_type = '02' langu = sy-langu description = iv_description ) ).
+        ENDIF.
       WHEN 'WDCC'.    " R3TR  WDCC  Web Dynpro Component Configuration
-        DELETE FROM wdy_config_datt WHERE config_id = @iv_name AND config_type = '00' AND config_var = ''.
-        MODIFY wdy_config_datt FROM @( VALUE #( config_id = iv_name config_type = '00' langu = sy-langu description = iv_description ) ).
+        DELETE FROM wdy_config_datt WHERE config_id = @iv_name.
+        IF iv_description IS NOT INITIAL.
+          MODIFY wdy_config_datt FROM @( VALUE #( config_id = iv_name langu = sy-langu description = iv_description ) ).
+        ENDIF.
       WHEN 'WDYA'.    " R3TR  WDYA  Web Dynpro Application
         DELETE FROM wdy_applicationt WHERE application_name = @iv_name.
-        MODIFY wdy_applicationt FROM @( VALUE #( application_name = iv_name langu = sy-langu description = iv_description ) ).
+        IF iv_description IS NOT INITIAL.
+          MODIFY wdy_applicationt FROM @( VALUE #( application_name = iv_name langu = sy-langu description = iv_description ) ).
+        ENDIF.
       WHEN 'WDYN'.    " R3TR  WDYN  Web Dynpro Component
         DELETE FROM wdy_componentt WHERE component_name = @iv_name.
-        MODIFY wdy_componentt FROM @( VALUE #( component_name = iv_name langu = sy-langu description = iv_description ) ).
+        IF iv_description IS NOT INITIAL.
+          MODIFY wdy_componentt FROM @( VALUE #( component_name = iv_name langu = sy-langu description = iv_description ) ).
+        ENDIF.
       WHEN 'CLAS'.    " R3TR  CLAS  Class (ABAP Objects)
         DELETE FROM seoclasstx WHERE clsname = @iv_name.
-        MODIFY seoclasstx FROM @( VALUE #( clsname = iv_name langu = sy-langu descript = iv_description ) ).
+        IF iv_description IS NOT INITIAL.
+          MODIFY seoclasstx FROM @( VALUE #( clsname = iv_name langu = sy-langu descript = iv_description ) ).
+        ENDIF.
       WHEN OTHERS.
     ENDCASE.
 
@@ -1283,15 +1335,11 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
             FIND '</Node>' IN SECTION OFFSET lv_offset2 OF lv_string MATCH OFFSET lv_offset2.
             lv_offset2 = lv_offset2 + 7.
           ENDIF.
-        ELSE.
-          FIND '</Item></Node></Item></Node></Component>' IN lv_string MATCH OFFSET lv_offset.
-          lv_offset2 = lv_offset.
+          lv_string = lv_string(lv_offset)
+                   && |<Node Name="APP_SPECIFIC_CC" SimpleFormat="true"><Item Index="000001" SimpleFormat="true"><COMPONENT>{ iv_feeder_class }</COMPONENT></Item></Node>|
+                   && lv_string+lv_offset2.
+          lv_need_to_save = abap_true.
         ENDIF.
-        lv_string = lv_string(lv_offset)
-                 && |<Node Name="APP_SPECIFIC_CC" SimpleFormat="true"><Item Index="000001" SimpleFormat="true"><COMPONENT>{ iv_feeder_class }</COMPONENT></Item></Node>|
-                 && lv_string+lv_offset2.
-        lv_need_to_save = abap_true.
-
       WHEN OTHERS.
         " find feeder
         FIND REGEX '<FEEDER>[^<]*</FEEDER>' IN lv_string MATCH OFFSET lv_offset MATCH LENGTH lv_length.
@@ -1321,7 +1369,6 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
             lv_need_to_save = abap_true.
           ENDIF.
         ENDIF.
-
     ENDCASE.
 
     IF lv_need_to_save EQ abap_true.
@@ -1444,145 +1491,5 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
       ENDCASE.
     ENDDO.
 
-  ENDMETHOD.
-
-
-  METHOD can_inherit.
-    DATA:
-      superclskey TYPE seoclskey,
-      superclass  TYPE vseoclass.
-
-    superclskey-clsname = iv_class.
-
-* check superclass existence
-    CALL FUNCTION 'SEO_CLASS_GET'
-      EXPORTING
-        clskey       = superclskey
-        version      = seoc_version_inactive
-        state        = '0'
-      IMPORTING
-*       SUPERCLASS   =
-        class        = superclass
-      EXCEPTIONS
-        not_existing = 1
-        deleted      = 2
-        is_interface = 3
-        model_only   = 4
-        OTHERS       = 5.
-    IF sy-subrc <> 0.
-      IF iv_message EQ abap_true.
-        MESSAGE ID sy-msgid TYPE 'E' NUMBER sy-msgno
-          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-      ENDIF.
-      RETURN.
-    ENDIF.
-
-* check superclass is final
-    IF superclass-clsfinal = seox_true.
-      IF iv_message EQ abap_true.
-        MESSAGE e109(oo)
-          WITH superclskey-clsname.
-      ENDIF.
-      RETURN.
-    ENDIF.
-
-    CASE superclass-category.
-      WHEN seoc_category_persistent.
-        IF iv_message EQ abap_true.
-          MESSAGE e626(oo).
-        ENDIF.
-        RETURN.
-      WHEN seoc_category_p_agent.
-        IF iv_message EQ abap_true.
-          MESSAGE e630(oo) WITH superclass-clsname.
-        ENDIF.
-        RETURN.
-      WHEN seoc_category_exception.
-        IF iv_message EQ abap_true.
-          MESSAGE e192(oo).
-        ENDIF.
-        RETURN.
-    ENDCASE.
-
-    rv_can_inherit = abap_true.
-  ENDMETHOD.
-
-
-  METHOD save_wdca.
-    DATA: ls_wdy_config_key TYPE wdy_config_key,
-          lo_translator	    TYPE REF TO if_wdr_config_otr,
-          lv_devclass	      TYPE devclass,
-          lv_trkorr	        TYPE trkorr.
-
-
-    ls_wdy_config_key-config_id = is_wdca-config_id.
-    ls_wdy_config_key-config_type = is_wdca-config_type.
-    ls_wdy_config_key-config_var = is_wdca-config_var.
-
-    corr_insert(
-      EXPORTING
-        iv_name     = ls_wdy_config_key
-        iv_typekind = 'WDCA'
-      IMPORTING
-        ev_devclass = lv_devclass
-        ev_trkorr   = lv_trkorr
-    ).
-
-    MODIFY wdy_config_appl CONNECTION (if_wdr_cfg_constants=>c_db_con_name) FROM is_wdca.
-    COMMIT CONNECTION (if_wdr_cfg_constants=>c_db_con_name).
-
-    cl_wdr_cfg_persistence_utils=>config_changed(
-      EXPORTING
-        action              = if_wd_cfg_badi_changes=>co_action_modify
-        config_key          = ls_wdy_config_key          " Key Components of Configuration Tables
-        devclass            = lv_devclass            " Package
-        environment         = if_wd_cfg_badi_changes=>co_env_gui
-        is_component        = abap_false
-        object_name         = is_wdca-application         " Web Dynpro: Component Name
-        pers_scope          = if_wd_personalization=>co_scope_config          " Web Dynpro: Personalization Range
-        transport           = lv_trkorr           " Request/Task
-    ).
-
-
-  ENDMETHOD.
-
-
-  METHOD save_wdcc.
-    DATA: ls_wdy_config_key TYPE wdy_config_key,
-          lo_translator	    TYPE REF TO if_wdr_config_otr,
-          lv_devclass	      TYPE devclass,
-          lv_trkorr	        TYPE trkorr.
-
-
-    ls_wdy_config_key-config_id = is_wdcc-config_id.
-    ls_wdy_config_key-config_type = is_wdcc-config_type.
-    ls_wdy_config_key-config_var = is_wdcc-config_var.
-
-    corr_insert(
-      EXPORTING
-        iv_name     = ls_wdy_config_key
-        iv_typekind = 'WDCC'
-      IMPORTING
-        ev_devclass = lv_devclass
-        ev_trkorr   = lv_trkorr
-    ).
-
-    cl_wdr_cfg_persistence_utils=>save_comp_config_to_db(
-      EXPORTING
-        config_data = is_wdcc
-        translator  = lo_translator
-    ).
-
-    cl_wdr_cfg_persistence_utils=>config_changed(
-      EXPORTING
-        action              = if_wd_cfg_badi_changes=>co_action_modify
-        config_key          = ls_wdy_config_key          " Key Components of Configuration Tables
-        devclass            = lv_devclass            " Package
-        environment         = if_wd_cfg_badi_changes=>co_env_gui
-        is_component        = abap_true
-        object_name         = is_wdcc-component         " Web Dynpro: Component Name
-        pers_scope          = if_wd_personalization=>co_scope_config          " Web Dynpro: Personalization Range
-        transport           = lv_trkorr           " Request/Task
-    ).
   ENDMETHOD.
 ENDCLASS.

@@ -2666,18 +2666,6 @@
     </item>
     <item>
      <ID>S</ID>
-     <KEY>PA_NS</KEY>
-     <ENTRY>Name Space (Prefix)</ENTRY>
-     <LENGTH>27</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>PA_OW</KEY>
-     <ENTRY>Overwrite</ENTRY>
-     <LENGTH>17</LENGTH>
-    </item>
-    <item>
-     <ID>S</ID>
      <KEY>PA_WCLAS</KEY>
      <ENTRY>With Feeder Class</ENTRY>
      <LENGTH>25</LENGTH>

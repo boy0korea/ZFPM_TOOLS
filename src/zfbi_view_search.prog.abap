@@ -1,4 +1,4 @@
-* ZFPM_TOOLS
+* https://github.com/boy0korea/ZFPM_TOOLS
 
 REPORT zfbi_view_search.
 
@@ -342,8 +342,6 @@ FORM edit_user_command USING pv_ucomm ps_select TYPE slis_selfield.
       CASE ps_select-fieldname.
         WHEN 'NAME'.
           PERFORM do_web_cfg USING ps_select-value.
-        WHEN 'BO'.
-          PERFORM do_bo USING ps_select-value.
         WHEN 'UI_MAPPER_CLS'
           OR 'UI_EXIT_INTF_CLS'.
           PERFORM do_class USING ps_select-value.
@@ -496,47 +494,6 @@ FORM do_web_cfg USING iv_wdcc.
   ENDIF.
 
 ENDFORM.                    " DO_WEB_CFG
-FORM do_bo USING iv_bo.
-  DATA: lt_bdcdata TYPE TABLE OF bdcdata,
-        ls_bdcdata TYPE bdcdata.
-
-  CHECK: iv_bo IS NOT INITIAL.
-
-  CLEAR: ls_bdcdata.
-  ls_bdcdata-program = '/BOBF/CONF_UI'.
-  ls_bdcdata-dynpro = '0100'.
-  ls_bdcdata-dynbegin = 'X'.
-  APPEND ls_bdcdata TO lt_bdcdata.
-
-  CLEAR: ls_bdcdata.
-  ls_bdcdata-fnam = 'BDC_OKCODE'.
-  ls_bdcdata-fval = '=OPEN'.
-  APPEND ls_bdcdata TO lt_bdcdata.
-
-  CLEAR: ls_bdcdata.
-  ls_bdcdata-fnam = 'BDC_SUBSCR'.
-  ls_bdcdata-fval = '/BOBF/CONF_UI'.
-  APPEND ls_bdcdata TO lt_bdcdata.
-
-  CLEAR: ls_bdcdata.
-  ls_bdcdata-program = '/BOBF/CONF_UI'.
-  ls_bdcdata-dynpro = '0110'.
-  ls_bdcdata-dynbegin = 'X'.
-  APPEND ls_bdcdata TO lt_bdcdata.
-
-  CLEAR: ls_bdcdata.
-  ls_bdcdata-fnam = '/BOBF/S_CONF_UI-BO_NAME'.
-  ls_bdcdata-fval = iv_bo.
-  APPEND ls_bdcdata TO lt_bdcdata.
-
-  CLEAR: ls_bdcdata.
-  ls_bdcdata-fnam = 'BDC_OKCODE'.
-  ls_bdcdata-fval = '=OPEN_BO'.
-  APPEND ls_bdcdata TO lt_bdcdata.
-
-  CALL TRANSACTION 'BOBF' USING lt_bdcdata MODE 'E'.
-
-ENDFORM.
 FORM do_save_edit.
   DATA: ls_outtab_old      TYPE ts_outtab,
         ls_outtab_new      TYPE ts_outtab,
