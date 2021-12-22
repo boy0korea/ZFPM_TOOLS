@@ -622,8 +622,9 @@ FORM enqueue.
           system_failure       = 2
           OTHERS               = 3.
       IF sy-subrc <> 0.
-        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        MESSAGE ID sy-msgid TYPE 'S' NUMBER sy-msgno
                    WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+        gv_readonly = abap_true.
       ENDIF.
     ENDIF.
   ELSEIF pr_wdca EQ 'X'.
@@ -659,8 +660,9 @@ FORM enqueue.
           system_failure       = 2
           OTHERS               = 3.
       IF sy-subrc <> 0.
-        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        MESSAGE ID sy-msgid TYPE 'S' NUMBER sy-msgno
                    WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+        gv_readonly = abap_true.
       ENDIF.
     ENDIF.
   ELSEIF pr_enho EQ 'X'.
@@ -694,8 +696,9 @@ FORM enqueue.
           system_failure = 2
           OTHERS         = 3.
       IF sy-subrc <> 0.
-        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        MESSAGE ID sy-msgid TYPE 'S' NUMBER sy-msgno
                    WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+        gv_readonly = abap_true.
       ENDIF.
     ENDIF.
   ENDIF.
