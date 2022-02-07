@@ -340,6 +340,23 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
               name   = lv_application
               corrnr = lv_corrnr
           ).
+
+          DATA: p_object_type TYPE  wbobjtype.
+          p_object_type-objtype_tr = 'WDYA'.
+          p_object_type-subtype_wb = 'Y20'. " FPM appl.
+          CALL FUNCTION 'WB_TREE_UPDATE_OBJECTLIST'
+            EXPORTING
+*             p_object_type       = swbm_c_type_wdy_application
+              p_global_type       = p_object_type
+              p_object_name       = lv_application
+              p_operation         = swbm_c_op_delete
+            EXCEPTIONS
+              error_occured       = 1
+              invalid_operation   = 2
+              no_objectlist_found = 3
+              long_object_name    = 4
+              OTHERS              = 5.
+
         CATCH cx_wdy_wb_appl_util_failure.
       ENDTRY.
 
@@ -1281,6 +1298,52 @@ CLASS ZCL_FPM_TOOLS IMPLEMENTATION.
         IF iv_description IS NOT INITIAL.
           MODIFY wdy_applicationt FROM @( VALUE #( application_name = iv_name langu = sy-langu description = iv_description ) ).
         ENDIF.
+
+        " SICF 있으면 변경.
+        cl_o2_helper=>split_applname(
+          EXPORTING
+            p_applname     = CONV #( iv_name )
+          IMPORTING
+            p_namespace    = DATA(lv_namespace)
+            p_mod_applname = DATA(lv_mod_applname)
+        ).
+        cl_wd_utilities=>construct_wd_url(
+          EXPORTING
+            application_name              = lv_mod_applname
+            namespace                     = lv_namespace
+          IMPORTING
+            out_local_url                 = DATA(lv_out_local_url)
+        ).
+        cl_icf_tree=>if_icf_tree~service_from_url(
+          EXPORTING
+            url                   = lv_out_local_url
+            hostnumber            = 0
+          IMPORTING
+            urlsuffix             = DATA(lv_urlsuffix)
+            icfnodguid            = DATA(lv_icfnodguid)
+          EXCEPTIONS
+            wrong_application     = 1
+            no_application        = 2
+            not_allow_application = 3
+            wrong_url             = 4
+            no_authority          = 5
+            OTHERS                = 6
+        ).
+        IF sy-subrc <> 0.
+          MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+        ENDIF.
+        IF lv_urlsuffix IS INITIAL AND lv_icfnodguid IS NOT INITIAL.
+          DATA: ls_icfdocu TYPE icfdocu.
+          SELECT SINGLE icf_name icfparguid
+            INTO CORRESPONDING FIELDS OF ls_icfdocu
+            FROM icfservice
+            WHERE icfnodguid = lv_icfnodguid.
+          ls_icfdocu-icf_langu = sy-langu.
+          ls_icfdocu-icf_docu = iv_description.
+          MODIFY icfdocu FROM ls_icfdocu.
+        ENDIF.
+
       WHEN 'WDYN'.    " R3TR  WDYN  Web Dynpro Component
         DELETE FROM wdy_componentt WHERE component_name = @iv_name.
         IF iv_description IS NOT INITIAL.

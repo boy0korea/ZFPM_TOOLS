@@ -100,10 +100,33 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
   METHOD copy_wdya.
     DATA: lo_application     TYPE REF TO if_wdy_md_application,
           ls_wdy_application TYPE wdy_application,
+          lv_trkorr          TYPE trkorr,
+          ls_request         TYPE trwbo_request,
           lo_prop_iter       TYPE REF TO if_object_collection_iterator,
           lo_prop            TYPE REF TO if_wdy_md_application_property,
           lt_param           TYPE cl_wdy_wb_application_util=>ttyp_application_parameter,
           ls_param           TYPE cl_wdy_wb_application_util=>stru_application_parameter.
+
+
+    lv_trkorr = iv_trkorr.
+    CALL FUNCTION 'TR_READ_REQUEST'
+      EXPORTING
+        iv_read_e070     = abap_true
+        iv_trkorr        = lv_trkorr
+      CHANGING
+        cs_request       = ls_request
+      EXCEPTIONS
+        error_occured    = 1
+        no_authorization = 2
+        OTHERS           = 3.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+*----- a task was selected - replace by request as apis need request
+    IF ls_request-h-strkorr IS NOT INITIAL.
+      lv_trkorr = ls_request-h-strkorr.
+    ENDIF.
 
     lo_application = cl_wdy_md_application=>get_object_by_key( iv_from ).
     lo_application->if_wdy_md_object~get_definition(
@@ -128,7 +151,7 @@ CLASS ZCL_FPM_TOOLS_COPY IMPLEMENTATION.
         interface_view_name  = ls_wdy_application-startup_view  " Web Dynpro : Name of Interface View
         startup_plug_name    = ls_wdy_application-startup_plug    " Web Dynpro : Name of Startup Plug
         devclass             = iv_devclass             " Package
-        corrnr               = iv_trkorr               " Request/Task
+        corrnr               = lv_trkorr               " Request/Task
         parameters           = lt_param           " Application Parameter
     ).
 
