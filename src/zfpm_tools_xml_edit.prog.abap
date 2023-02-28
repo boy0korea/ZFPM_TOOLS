@@ -2,6 +2,24 @@
 
 REPORT zfpm_tools_xml_edit.
 
+**********************************************************************
+* global variable
+**********************************************************************
+DATA: go_dock             TYPE REF TO cl_gui_docking_container,
+      go_edit             TYPE REF TO cl_gui_textedit,
+      gv_readonly         TYPE flag,
+      gs_wdy_config_data  TYPE wdy_config_data,
+      gs_wdy_config_appl  TYPE wdy_config_appl,
+      gs_wdy_config_key   TYPE wdy_config_key,
+      gs_enhheader        TYPE enhheader,
+      gs_wdy_cfg_enh_data TYPE wdy_cfg_enh_data,
+      gv_str              TYPE string,
+      ok_code             TYPE okcode.
+FIELD-SYMBOLS: <gv_xstr> TYPE xstring.
+
+**********************************************************************
+* SCREEN
+**********************************************************************
 * line 1 : WDCC
 SELECTION-SCREEN BEGIN OF LINE.
   PARAMETERS: pr_wdcc TYPE c RADIOBUTTON GROUP typ DEFAULT 'X' USER-COMMAND typ.
@@ -26,10 +44,26 @@ PARAMETERS: p_edit TYPE flag DEFAULT 'X' NO-DISPLAY.
 **********************************************************************
 INITIALIZATION.
 **********************************************************************
+  PERFORM init.
 
 **********************************************************************
 AT SELECTION-SCREEN OUTPUT.
 **********************************************************************
+  PERFORM modify_screen.
+
+**********************************************************************
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR pa_enho.
+**********************************************************************
+  PERFORM f4_pa_enho.
+
+**********************************************************************
+START-OF-SELECTION.
+**********************************************************************
+  PERFORM exec.
+
+FORM init.
+ENDFORM.
+FORM modify_screen.
   LOOP AT SCREEN.
     IF pr_wdcc EQ 'X'.
       IF screen-group1 EQ 'CC'.
@@ -66,26 +100,76 @@ AT SELECTION-SCREEN OUTPUT.
       ENDIF.
     ENDIF.
   ENDLOOP.
+ENDFORM.
+FORM f4_pa_enho .
+  DATA: lt_enho_value_tab TYPE TABLE OF wdy_config_enho_se80,
+        ls_enho_value_tab TYPE wdy_config_enho_se80,
+        lv_fldvalue       TYPE help_info-fldvalue.
 
-**********************************************************************
-AT SELECTION-SCREEN ON VALUE-REQUEST FOR pa_enho.
-**********************************************************************
-  PERFORM value_help_pa_enho.
+  SELECT enhname shorttext_id AS description
+    INTO CORRESPONDING FIELDS OF TABLE lt_enho_value_tab
+    FROM enhheader
+    WHERE enhtooltype = 'WDYCONF'
+      AND version = 'A'
+  .
+  LOOP AT lt_enho_value_tab INTO ls_enho_value_tab.
+    " description
+    SELECT SINGLE text
+      INTO ls_enho_value_tab-description
+      FROM sotr_text
+      WHERE concept = ls_enho_value_tab-description
+        AND langu = sy-langu
+    .
+    " WDCC key
+    CLEAR: gs_wdy_config_key.
+    SELECT SINGLE obj_name
+      INTO gs_wdy_config_key
+      FROM enhobj
+      WHERE enhname = ls_enho_value_tab-enhname
+        AND version = 'A'
+    .
+    MOVE-CORRESPONDING gs_wdy_config_key TO ls_enho_value_tab.
 
-**********************************************************************
-START-OF-SELECTION.
-**********************************************************************
-  DATA: go_dock             TYPE REF TO cl_gui_docking_container,
-        go_edit             TYPE REF TO cl_gui_textedit,
-        gv_readonly         TYPE flag,
-        gs_wdy_config_data  TYPE wdy_config_data,
-        gs_wdy_config_appl  TYPE wdy_config_appl,
-        gs_wdy_config_key   TYPE wdy_config_key,
-        gs_enhheader        TYPE enhheader,
-        gs_wdy_cfg_enh_data TYPE wdy_cfg_enh_data,
-        gv_str              TYPE string,
-        ok_code             TYPE okcode.
-  FIELD-SYMBOLS: <gv_xstr> TYPE xstring.
+    MODIFY lt_enho_value_tab FROM ls_enho_value_tab.
+  ENDLOOP.
+
+  lv_fldvalue = pa_enho.
+  CALL FUNCTION 'F4IF_INT_TABLE_VALUE_REQUEST'
+    EXPORTING
+*     DDIC_STRUCTURE  = ' '
+      retfield        = 'ENHNAME'
+*     PVALKEY         = ' '
+      dynpprog        = sy-repid
+      dynpnr          = '1000'
+      dynprofield     = 'PA_ENHO'
+*     STEPL           = 0
+*     WINDOW_TITLE    = WINDOW_TITLE
+      value           = lv_fldvalue
+      value_org       = 'S'
+*     MULTIPLE_CHOICE = ' '
+*     DISPLAY         = ' '
+*     CALLBACK_PROGRAM       = ' '
+*     CALLBACK_FORM   = ' '
+*     CALLBACK_METHOD = CALLBACK_METHOD
+*     MARK_TAB        = MARK_TAB
+* IMPORTING
+*     USER_RESET      = USER_RESET
+    TABLES
+      value_tab       = lt_enho_value_tab
+*     FIELD_TAB       = FIELD_TAB
+*     RETURN_TAB      = RETURN_TAB
+*     DYNPFLD_MAPPING = DYNPFLD_MAPPING
+    EXCEPTIONS
+      parameter_error = 1
+      no_values_found = 2
+      OTHERS          = 3.
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+               WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+
+ENDFORM.
+FORM exec.
 
   PERFORM init_go_dock.
   PERFORM load_xml.
@@ -100,9 +184,8 @@ START-OF-SELECTION.
 *  MODULE user_command_0010.
   ENDIF.
 
-**********************************************************************
-END-OF-SELECTION.
-**********************************************************************
+ENDFORM.
+
 
 *&---------------------------------------------------------------------*
 *&      Module  PBO_0010  OUTPUT
@@ -363,82 +446,6 @@ FORM do_web_cfg .
   ENDIF.
 
 ENDFORM.                    " DO_WEB_CFG
-*&---------------------------------------------------------------------*
-*&      Form  VALUE_HELP_PA_ENHO
-*&---------------------------------------------------------------------*
-*       text
-*----------------------------------------------------------------------*
-*  -->  p1        text
-*  <--  p2        text
-*----------------------------------------------------------------------*
-FORM value_help_pa_enho .
-  DATA: lt_enho_value_tab TYPE TABLE OF wdy_config_enho_se80,
-        ls_enho_value_tab TYPE wdy_config_enho_se80,
-        lv_fldvalue       TYPE help_info-fldvalue.
-
-  SELECT enhname shorttext_id AS description
-    INTO CORRESPONDING FIELDS OF TABLE lt_enho_value_tab
-    FROM enhheader
-    WHERE enhtooltype = 'WDYCONF'
-      AND version = 'A'
-  .
-  LOOP AT lt_enho_value_tab INTO ls_enho_value_tab.
-    " description
-    SELECT SINGLE text
-      INTO ls_enho_value_tab-description
-      FROM sotr_text
-      WHERE concept = ls_enho_value_tab-description
-        AND langu = sy-langu
-    .
-    " WDCC key
-    CLEAR: gs_wdy_config_key.
-    SELECT SINGLE obj_name
-      INTO gs_wdy_config_key
-      FROM enhobj
-      WHERE enhname = ls_enho_value_tab-enhname
-        AND version = 'A'
-    .
-    MOVE-CORRESPONDING gs_wdy_config_key TO ls_enho_value_tab.
-
-    MODIFY lt_enho_value_tab FROM ls_enho_value_tab.
-  ENDLOOP.
-
-  lv_fldvalue = pa_enho.
-  CALL FUNCTION 'F4IF_INT_TABLE_VALUE_REQUEST'
-    EXPORTING
-*     DDIC_STRUCTURE  = ' '
-      retfield        = 'ENHNAME'
-*     PVALKEY         = ' '
-      dynpprog        = sy-repid
-      dynpnr          = '1000'
-      dynprofield     = 'PA_ENHO'
-*     STEPL           = 0
-*     WINDOW_TITLE    = WINDOW_TITLE
-      value           = lv_fldvalue
-      value_org       = 'S'
-*     MULTIPLE_CHOICE = ' '
-*     DISPLAY         = ' '
-*     CALLBACK_PROGRAM       = ' '
-*     CALLBACK_FORM   = ' '
-*     CALLBACK_METHOD = CALLBACK_METHOD
-*     MARK_TAB        = MARK_TAB
-* IMPORTING
-*     USER_RESET      = USER_RESET
-    TABLES
-      value_tab       = lt_enho_value_tab
-*     FIELD_TAB       = FIELD_TAB
-*     RETURN_TAB      = RETURN_TAB
-*     DYNPFLD_MAPPING = DYNPFLD_MAPPING
-    EXCEPTIONS
-      parameter_error = 1
-      no_values_found = 2
-      OTHERS          = 3.
-  IF sy-subrc <> 0.
-    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-               WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
-  ENDIF.
-
-ENDFORM.                    " VALUE_HELP_PA_ENHO
 *&---------------------------------------------------------------------*
 *&      Form  INIT_GO_DOCK
 *&---------------------------------------------------------------------*

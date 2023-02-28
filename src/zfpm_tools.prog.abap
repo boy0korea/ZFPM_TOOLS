@@ -3,6 +3,14 @@
 REPORT zfpm_tools.
 
 **********************************************************************
+* global variable
+**********************************************************************
+  DATA: gt_uibb_info      TYPE zcl_fpm_tools=>tt_uibb_info,
+        gt_uibb_info_old  TYPE zcl_fpm_tools=>tt_uibb_info,
+        gv_edit_mode      TYPE flag,
+        gv_alv_first_time TYPE flag.
+
+**********************************************************************
 * SCREEN
 **********************************************************************
 PARAMETERS: pr_edit  TYPE flag RADIOBUTTON GROUP rd DEFAULT 'X' USER-COMMAND rd,
@@ -29,26 +37,18 @@ INITIALIZATION.
 **********************************************************************
 AT SELECTION-SCREEN OUTPUT.
 **********************************************************************
-  PERFORM loop_screen.
+  PERFORM modify_screen.
 
 **********************************************************************
 AT SELECTION-SCREEN ON VALUE-REQUEST FOR pa_file.
 **********************************************************************
-  PERFORM f4_file.
+  PERFORM f4_pa_file.
 
 **********************************************************************
 START-OF-SELECTION.
 **********************************************************************
-  PERFORM execute.
+  PERFORM exec.
 
-
-**********************************************************************
-* global variable
-**********************************************************************
-  DATA: gt_uibb_info      TYPE zcl_fpm_tools=>tt_uibb_info,
-        gt_uibb_info_old  TYPE zcl_fpm_tools=>tt_uibb_info,
-        gv_edit_mode      TYPE flag,
-        gv_alv_first_time TYPE flag.
 
 **********************************************************************
 * form
@@ -74,7 +74,7 @@ FORM init.
 
   pa_copym = 'C'.
 ENDFORM.
-FORM loop_screen.
+FORM modify_screen.
   CASE abap_true.
     WHEN pr_edit.
       LOOP AT SCREEN.
@@ -142,7 +142,7 @@ FORM loop_screen.
   ENDCASE.
 ENDFORM.
 
-FORM f4_file.
+FORM f4_pa_file.
   DATA: lt_df         TYPE TABLE OF dynpread,
         ls_df         TYPE dynpread,
         lt_file_table	TYPE filetable,
@@ -187,7 +187,7 @@ FORM f4_file.
 
 ENDFORM.
 
-FORM execute.
+FORM exec.
 
   CASE abap_true.
     WHEN pr_edit.
@@ -824,7 +824,6 @@ FORM execute_copy.
   READ TABLE lt_outtab INTO ls_outtab INDEX 1.
   DELETE lt_outtab INDEX 1.
   ls_fpm_name_map-config_id_copy = ls_outtab-config_id_copy.
-  ls_fpm_name_map-config_description_copy = ls_outtab-config_description_copy.
   IF ls_outtab-mode_copy EQ abap_true.
     ls_fpm_name_map-application_copy = ls_outtab-feeder_class_copy.
     ls_fpm_name_map-application_description_copy = ls_outtab-feeder_class_description_copy.
